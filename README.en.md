@@ -58,6 +58,17 @@ wget -qO- https://github.com/remyweinstein/luci-app-keylink/releases/latest/down
 
 The release installer already knows where to download the archive. To use a different source, specify it explicitly: `KEYLINK_URL=https://example.com/luci-app-keylink.tar.gz`.
 
+### Creating a release
+
+GitHub Actions creates a release automatically when a tag prefixed with `v` is pushed. For example, to publish `v1.0.0`:
+
+```sh
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+The workflow creates a GitHub Release containing `luci-app-keylink.tar.gz` and a configured `install.sh`.
+
 The installer:
 
 1. Checks the system and available storage.

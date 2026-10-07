@@ -58,6 +58,17 @@ wget -qO- https://github.com/remyweinstein/luci-app-keylink/releases/latest/down
 
 Установщик из релиза сам знает, откуда скачать архив. Для другого источника укажите его явно: `KEYLINK_URL=https://…/luci-app-keylink.tar.gz`.
 
+### Выпуск релиза
+
+Релиз автоматически собирается GitHub Actions при отправке тега с префиксом `v`. Например, чтобы выпустить `v1.0.0`:
+
+```sh
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+Workflow создаст GitHub Release с архивом `luci-app-keylink.tar.gz` и готовым `install.sh`.
+
 Установщик:
 
 1. проверяет систему и свободное место;

@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+
+      - name: Prepare release files
+        env:
+          REPOSITORY: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -eu
+          mkdir -p dist
+          git archive --format=tar --prefix=luci-app-keylink/ "$TAG" | tar -xf - -C dist
+
+          git clone --depth=1 --filter=blob:none --sparse \
+            https://github.com/openwrt/luci.git "$RUNNER_TEMP/luci"
+          git -C "$RUNNER_TEMP/luci" sparse-checkout set modules/luci-base/src
+          make -C "$RUNNER_TEMP/luci/modules/luci-base/src" po2lmo
+          mkdir -p dist/luci-app-keylink/i18n
+          "$RUNNER_TEMP/luci/modules/luci-base/src/po2lmo" \
+            dist/luci-app-keylink/po/ru/keylink.po \
+            dist/luci-app-keylink/i18n/keylink.ru.lmo
+
+          sed "s|__REPO__|$REPOSITORY|g" install.sh > dist/install.sh
+          tar -czf dist/luci-app-keylink.tar.gz -C dist luci-app-keylink
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" \
+            dist/luci-app-keylink.tar.gz \
+            dist/install.sh \
+            --title "$TAG" \
+            --generate-notes
