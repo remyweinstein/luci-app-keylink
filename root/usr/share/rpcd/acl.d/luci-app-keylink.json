@@ -1,0 +1,22 @@
+{
+	"luci-app-keylink": {
+		"description": "Доступ к настройкам KeyLink",
+		"read": {
+			"file": {
+				"/usr/share/keylink/dpi_presets.json": [ "read" ]
+			},
+			"ubus": {
+				"file": [ "read" ],
+				"service": [ "list" ],
+				"keylink": [ "ping", "dpi_test_status", "update_check", "update_status" ]
+			},
+			"uci": [ "keylink" ]
+		},
+		"write": {
+			"ubus": {
+				"keylink": [ "update_sub", "dpi_test_start", "dpi_test_stop", "update_start", "restart" ]
+			},
+			"uci": [ "keylink" ]
+		}
+	}
+}

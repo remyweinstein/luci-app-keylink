@@ -1,0 +1,73 @@
+{
+	"admin/services/keylink/general": {
+		"title": "General",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "keylink/general"
+		}
+	},
+	"admin/services/keylink/outbounds": {
+		"title": "Servers",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "keylink/outbounds"
+		}
+	},
+	"admin/services/keylink/subscriptions": {
+		"title": "Subscriptions",
+		"order": 22,
+		"action": {
+			"type": "view",
+			"path": "keylink/subscriptions"
+		}
+	},
+	"admin/services/keylink/balancers": {
+		"title": "Balancers",
+		"order": 25,
+		"action": {
+			"type": "view",
+			"path": "keylink/balancers"
+		}
+	},
+	"admin/services/keylink/routing": {
+		"title": "Routing",
+		"order": 30,
+		"action": {
+			"type": "view",
+			"path": "keylink/routing"
+		}
+	},
+	"admin/services/keylink/dpi": {
+		"title": "DPI Bypass",
+		"order": 35,
+		"action": {
+			"type": "view",
+			"path": "keylink/dpi"
+		}
+	},
+	"admin/services/keylink/dns": {
+		"title": "DNS",
+		"order": 40,
+		"action": {
+			"type": "view",
+			"path": "keylink/dns"
+		}
+	},
+	"admin/services/keylink": {
+		"title": "KeyLink",
+		"order": 60,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": [
+				"luci-app-keylink"
+			],
+			"uci": {
+				"keylink": true
+			}
+		}
+	}
+}

@@ -1,0 +1,4 @@
+.DS_Store
+dist/
+i18n/
+.luci-tools/

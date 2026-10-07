@@ -1,0 +1,920 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-keylink\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "General"
+msgstr "Общие"
+
+msgid "KeyLink is running."
+msgstr "KeyLink запущен."
+
+msgid "KeyLink is stopped."
+msgstr "KeyLink остановлен."
+
+msgid "General Settings"
+msgstr "Общие настройки"
+
+msgid "Enable"
+msgstr "Включить"
+
+msgid "Default route"
+msgstr "Основной маршрут"
+
+msgid "Where to send traffic that does not match any rule."
+msgstr "Куда идёт трафик, который не попал ни под одно правило."
+
+msgid "Transparent proxy for LAN"
+msgstr "Прозрачный прокси для LAN"
+
+msgid "All IPv4 traffic from LAN clients passes through Xray and the routing rules."
+msgstr "Весь IPv4-трафик клиентов из LAN проходит через Xray и правила маршрутизации."
+
+msgid "LAN interface"
+msgstr "Интерфейс LAN"
+
+msgid "TPROXY port"
+msgstr "Порт TPROXY"
+
+msgid "SOCKS5 port"
+msgstr "Порт SOCKS5"
+
+msgid "0 to disable."
+msgstr "0 — выключено."
+
+msgid "HTTP proxy port"
+msgstr "Порт HTTP-прокси"
+
+msgid "Domain strategy"
+msgstr "Стратегия доменов"
+
+msgid "IPIfNonMatch: if no domain rule matches, resolve the domain and check IP rules."
+msgstr "IPIfNonMatch: если по домену правило не нашлось, домен резолвится и проверяются IP-правила."
+
+msgid "Latency check URL"
+msgstr "Адрес для проверки задержки"
+
+msgid "Used by the Check button and the Lowest latency and Least load balancers. Must return HTTP 204 or 200."
+msgstr "Используется кнопкой «Проверить» и балансировщиками «наименьшая задержка» и «наименьшая нагрузка». Должен отвечать кодом 204 или 200."
+
+msgid "Background check interval"
+msgstr "Интервал фоновой проверки"
+
+msgid "How often Xray checks servers in balancers: 30s, 1m, 5m."
+msgstr "Как часто Xray сам проверяет серверы в балансировщиках: 30s, 1m, 5m."
+
+msgid "Log level"
+msgstr "Уровень журнала"
+
+msgid "Xray handles DNS queries itself: domains listed below are resolved directly using local DNS; all others use encrypted DNS through the default route. This prevents your ISP from reading or modifying queries for blocked sites."
+msgstr "Xray отвечает на DNS-запросы сам: домены из списка ниже резолвятся локальным DNS напрямую, все остальные — через зашифрованный DNS по основному маршруту. Так провайдер не видит и не подменяет запросы к заблокированным сайтам."
+
+msgid "Use Xray DNS"
+msgstr "Использовать DNS Xray"
+
+msgid "Use it for router and LAN DNS"
+msgstr "Направить через него DNS роутера и сети"
+
+msgid "dnsmasq will forward all queries to Xray. Previous dnsmasq settings are restored when Xray stops. DNS resolution is unavailable while Xray is down; the service restarts automatically after a failure."
+msgstr "dnsmasq будет пересылать все запросы в Xray. Прежние настройки dnsmasq вернутся, когда Xray остановится. Пока Xray не работает, имена в сети не резолвятся — служба перезапускается автоматически при сбое."
+
+msgid "Remote DNS"
+msgstr "Удалённый DNS"
+
+msgid "Uses the default route. Specify an IP address, not a domain."
+msgstr "Идёт через основной маршрут. Указывайте IP-адрес, а не домен."
+
+msgid "Local DNS"
+msgstr "Локальный DNS"
+
+msgid "For the domains below and server hostnames. Use an IP address or a URL with +local; a domain here would cause a loop."
+msgstr "Для доменов из списка ниже и адресов самих серверов. Только IP-адрес или вариант с «+local»: домен здесь вызовет петлю."
+
+msgid "Yandex"
+msgstr "Яндекс"
+
+msgid "Cloudflare DoH (direct)"
+msgstr "Cloudflare DoH напрямую"
+
+msgid "Specify an IP address, such as 77.88.8.8, or a URL with +local"
+msgstr "Укажите IP-адрес, например 77.88.8.8, или адрес с «+local»"
+
+msgid "Domains for local DNS"
+msgstr "Домены для локального DNS"
+
+msgid "Address types"
+msgstr "Типы адресов"
+
+msgid "The transparent proxy only supports IPv4, so IPv6 addresses are not returned by default."
+msgstr "Прозрачный прокси работает только с IPv4, поэтому по умолчанию IPv6-адреса не возвращаются."
+
+msgid "IPv4 only"
+msgstr "Только IPv4"
+
+msgid "IPv4 and IPv6"
+msgstr "IPv4 и IPv6"
+
+msgid "IPv6 only"
+msgstr "Только IPv6"
+
+msgid "Xray DNS port"
+msgstr "Порт DNS Xray"
+
+msgid "Routing"
+msgstr "Маршрутизация"
+
+msgid "Rules are evaluated from top to bottom; the first match wins. Drag rows to reorder them. Conditions within a rule use AND; values within a list use OR."
+msgstr "Правила проверяются сверху вниз, срабатывает первое подходящее. Перетаскивайте строки, чтобы менять порядок. Внутри правила условия объединяются через «И», значения в одном списке — через «ИЛИ»."
+
+msgid "New rule"
+msgstr "Новое правило"
+
+msgid "Name"
+msgstr "Название"
+
+msgid "Enabled"
+msgstr "Вкл."
+
+msgid "Route to"
+msgstr "Куда направить"
+
+msgid "Domains"
+msgstr "Домены"
+
+msgid "One entry per line: geosite:category-ru, domain:example.com (including subdomains), full:example.com, keyword:google, regexp:..."
+msgstr "По одному значению на строку: geosite:category-ru, domain:example.com (с поддоменами), full:example.com, keyword:google, regexp:…"
+
+msgid "Destination IP addresses"
+msgstr "IP-адреса назначения"
+
+msgid "Clients (source IP)"
+msgstr "Клиенты (IP источника)"
+
+msgid "For example, 192.168.1.50 applies the rule only to that device."
+msgstr "Например, 192.168.1.50 — правило сработает только для этого устройства."
+
+msgid "Destination ports"
+msgstr "Порты назначения"
+
+msgid "Network"
+msgstr "Сеть"
+
+msgid "any"
+msgstr "любая"
+
+msgid "Protocol (sniffing)"
+msgstr "Протокол (по сниффингу)"
+
+msgid "checking..."
+msgstr "проверка…"
+
+msgid "%d ms"
+msgstr "%d мс"
+
+msgid "error"
+msgstr "ошибка"
+
+msgid "No response"
+msgstr "нет ответа"
+
+msgid "Some links could not be imported"
+msgstr "Не все ссылки импортированы"
+
+msgid "Servers added: %d. Click Save & Apply to make them available to Xray."
+msgstr "Добавлено серверов: %d. Нажмите «Сохранить и применить», чтобы Xray их увидел."
+
+msgid "Servers"
+msgstr "Серверы"
+
+msgid "Order does not matter: select the default server on the General tab; other servers are used in routing rules."
+msgstr "Порядок не важен: основной сервер выбирается на вкладке «Общие», остальные используются в правилах."
+
+msgid "New server"
+msgstr "Новый сервер"
+
+msgid "Check latency through this server"
+msgstr "Проверить задержку через этот сервер"
+
+msgid "Check"
+msgstr "Проверить"
+
+msgid "Basic"
+msgstr "Основное"
+
+msgid "Transport and Encryption"
+msgstr "Транспорт и шифрование"
+
+msgid "Protocol"
+msgstr "Протокол"
+
+msgid "Address"
+msgstr "Адрес"
+
+msgid "Port"
+msgstr "Порт"
+
+msgid "Subscription"
+msgstr "Подписка"
+
+msgid "Latency"
+msgstr "Задержка"
+
+msgid "Password"
+msgstr "Пароль"
+
+msgid "Encryption"
+msgstr "Шифрование"
+
+msgid "none"
+msgstr "нет"
+
+msgid "Transport"
+msgstr "Транспорт"
+
+msgid "Security"
+msgstr "Защита"
+
+msgid "uTLS fingerprint"
+msgstr "Отпечаток uTLS"
+
+msgid "Public key (pbk)"
+msgstr "Публичный ключ (pbk)"
+
+msgid "Comma-separated, for example h2,http/1.1. Hysteria2 defaults to h3."
+msgstr "Через запятую, например h2,http/1.1. Для Hysteria2 по умолчанию h3."
+
+msgid "Skip certificate verification"
+msgstr "Не проверять сертификат"
+
+msgid "Salamander obfuscation password"
+msgstr "Пароль обфускации Salamander"
+
+msgid "Leave empty if obfuscation is disabled on the server."
+msgstr "Оставьте пустым, если на сервере обфускация выключена."
+
+msgid "Port hopping range"
+msgstr "Порты для прыжков"
+
+msgid "For example, 20000-50000. The server must forward this range to its listening port."
+msgstr "Например, 20000-50000. Сервер должен перенаправлять этот диапазон на свой порт."
+
+msgid "Hopping interval (seconds)"
+msgstr "Интервал прыжков, с"
+
+msgid "A number or range, at least 5."
+msgstr "Число или диапазон, не меньше 5."
+
+msgid "Upload speed"
+msgstr "Скорость отдачи"
+
+msgid "For example, 50mbps. Leave empty for automatic bandwidth control (BBR)."
+msgstr "Например, 50mbps. Пусто — подбирается автоматически (BBR)."
+
+msgid "Download speed"
+msgstr "Скорость загрузки"
+
+msgid "For example, 200mbps."
+msgstr "Например, 200mbps."
+
+msgid "Path"
+msgstr "Путь"
+
+msgid "XHTTP mode"
+msgstr "Режим XHTTP"
+
+msgid "Check all"
+msgstr "Проверить все"
+
+msgid "Checks use saved and applied settings."
+msgstr "Проверяются сохранённые и применённые настройки."
+
+msgid "Add from links"
+msgstr "Добавить по ссылкам"
+
+msgid "Paste one or more links, one per line."
+msgstr "Вставьте одну или несколько ссылок, по одной на строку."
+
+msgid "Add servers"
+msgstr "Добавить серверы"
+
+msgid "B"
+msgstr "Б"
+
+msgid "KB"
+msgstr "КБ"
+
+msgid "MB"
+msgstr "МБ"
+
+msgid "GB"
+msgstr "ГБ"
+
+msgid "TB"
+msgstr "ТБ"
+
+msgid "never updated"
+msgstr "ещё не обновлялась"
+
+msgid "updated just now"
+msgstr "обновлена только что"
+
+msgid "updated %d min ago"
+msgstr "обновлена %d мин назад"
+
+msgid "updated %d h ago"
+msgstr "обновлена %d ч назад"
+
+msgid "updated %s"
+msgstr "обновлена %s"
+
+msgid "%s: %d servers (%d added, %d updated, %d removed)"
+msgstr "%s: серверов %d (новых %d, изменено %d, удалено %d)"
+
+msgid "Subscriptions"
+msgstr "Подписки"
+
+msgid "Subscription servers appear on the Servers tab and update automatically. Manual edits to these servers are overwritten on the next update. Rules and balancers keep their server references as long as the name, address, and port remain unchanged."
+msgstr "Серверы из подписки появляются на вкладке «Серверы» и обновляются автоматически. Ручные правки таких серверов перезапишутся при следующем обновлении. Правила и балансировщики сохраняют ссылку на сервер, пока у него не меняются название, адрес и порт."
+
+msgid "New subscription"
+msgstr "Новая подписка"
+
+msgid "Update"
+msgstr "Обновить"
+
+msgid "Status"
+msgstr "Состояние"
+
+msgid "servers: %d, %s"
+msgstr "серверов: %d, %s"
+
+msgid "traffic: %s of %s"
+msgstr "трафик: %s из %s"
+
+msgid "traffic: %s"
+msgstr "трафик: %s"
+
+msgid "expires %s (%d days left)"
+msgstr "до %s (осталось %d дн.)"
+
+msgid "expired %s"
+msgstr "истекла %s"
+
+msgid "Subscription URL"
+msgstr "Адрес подписки"
+
+msgid "Enter a URL such as https://..."
+msgstr "Нужен адрес вида https://…"
+
+msgid "Update interval (hours)"
+msgstr "Обновлять каждые, ч"
+
+msgid "0 or empty for manual updates only."
+msgstr "0 или пусто — только вручную."
+
+msgid "Download through proxy"
+msgstr "Скачивать через прокси"
+
+msgid "Use this if the subscription URL is blocked. Requires an enabled SOCKS5 port on the General tab and a working server."
+msgstr "Если адрес подписки заблокирован. Нужен включённый порт SOCKS5 на вкладке «Общие» и уже работающий сервер."
+
+msgid "Many panels return link lists only to recognized clients."
+msgstr "Многие панели отдают список ссылок только «знакомым» клиентам."
+
+msgid "Include servers whose names match"
+msgstr "Только серверы, чьё название содержит"
+
+msgid "Case-insensitive regular expression, for example: Netherlands|Germany|DE"
+msgstr "Регулярное выражение без учёта регистра, например: Нидерланды|Germany|🇩🇪"
+
+msgid "Exclude servers whose names match"
+msgstr "Исключить серверы, чьё название содержит"
+
+msgid "For example: RU|Russia|traffic|expires"
+msgstr "Например: RU|Россия|трафик|истекает"
+
+msgid "Update all"
+msgstr "Обновить все"
+
+msgid "Save and apply a new subscription first."
+msgstr "Новую подписку сначала сохраните и примените."
+
+msgid "Balancers"
+msgstr "Балансировщики"
+
+msgid "A balancer distributes traffic across multiple servers. Select it as the default route on the General tab or as a target in a routing rule."
+msgstr "Балансировщик распределяет трафик между несколькими серверами. Выберите его как основной маршрут на вкладке «Общие» или как цель в правиле маршрутизации."
+
+msgid "New balancer"
+msgstr "Новый балансировщик"
+
+msgid "Strategy"
+msgstr "Стратегия"
+
+msgid "Lowest latency and Least load regularly check servers and automatically select the best one, switching to the next if it fails."
+msgstr "«Наименьшая задержка» и «наименьшая нагрузка» регулярно проверяют серверы и сами переключаются на лучший, а при сбое — на следующий."
+
+msgid "Lowest latency"
+msgstr "Наименьшая задержка"
+
+msgid "Least load (stability)"
+msgstr "Наименьшая нагрузка (стабильность)"
+
+msgid "Random"
+msgstr "Случайный"
+
+msgid "Round-robin"
+msgstr "По очереди"
+
+msgid "All servers from subscriptions"
+msgstr "Все серверы подписок"
+
+msgid "Membership updates with the subscription."
+msgstr "Состав обновляется вместе с подпиской."
+
+msgid "Individual servers"
+msgstr "Отдельные серверы"
+
+msgid "%d selected"
+msgstr "%d шт."
+
+msgid "Select a subscription or at least one server"
+msgstr "Выберите подписку или хотя бы один сервер"
+
+msgid "No subscriptions"
+msgstr "Подписок нет"
+
+msgid "No servers. Add them on the Servers tab."
+msgstr "Серверов нет. Добавьте их на вкладке «Серверы»."
+
+msgid "If all servers are unavailable"
+msgstr "Если все недоступны"
+
+msgid "Works with latency- and load-based strategies."
+msgstr "Работает со стратегиями проверки задержки и нагрузки."
+
+msgid "do nothing"
+msgstr "ничего не делать"
+
+msgid "Without bypass"
+msgstr "Без обхода"
+
+msgid "Preset selected. Click Save & Apply at the top of the page."
+msgstr "Пресет выбран. Нажмите «Сохранить и применить» вверху страницы."
+
+msgid "YouTube and Discord via %s"
+msgstr "YouTube и Discord через %s"
+
+msgid "Discord voice via Zapret 2"
+msgstr "Голос Discord через Zapret 2"
+
+msgid "The rule was added at the end of the Routing tab. Click Save & Apply."
+msgstr "Правило добавлено в конец списка на вкладке «Маршрутизация». Нажмите «Сохранить и применить»."
+
+msgid "Starting test..."
+msgstr "Запуск проверки…"
+
+msgid "Could not start the test: %s"
+msgstr "Проверка не запустилась: %s"
+
+msgid "The engine is not installed. Install it with: wget -qO- https://github.com/remyweinstein/luci-app-keylink/releases/latest/download/install.sh | sh -s -- --with-byedpi --with-zapret"
+msgstr "Движок не установлен. Установите его командой: wget -qO- https://github.com/remyweinstein/luci-app-keylink/releases/latest/download/install.sh | sh -s -- --with-byedpi --with-zapret"
+
+msgid "The tester runs each preset in turn and opens the sites listed above through it. This takes a few minutes."
+msgstr "Проверка запускает каждый пресет по очереди и открывает через него сайты из списка выше. Займёт несколько минут."
+
+msgid "%s: tested %d of %d..."
+msgstr "%s: проверено %d из %d…"
+
+msgid "%s: test complete, %d presets."
+msgstr "%s: проверка завершена, %d пресетов."
+
+msgid "Test failed: %s"
+msgstr "Проверка не удалась: %s"
+
+msgid "Preset"
+msgstr "Пресет"
+
+msgid "Result"
+msgstr "Итог"
+
+msgid "✓ %.1f s"
+msgstr "✓ %.1f с"
+
+msgid "Use"
+msgstr "Использовать"
+
+msgid "All sites work without bypass, so they are not currently blocked and comparing presets may not help. YouTube throttling may not be visible on the home page: add a URL that downloads a substantial amount of data."
+msgstr "Все сайты открываются и без обхода — значит, сейчас они не блокируются, и сравнение пресетов мало что покажет. Замедление YouTube на главной странице может быть незаметно: добавьте в список адрес, с которого скачивается много данных."
+
+msgid "Custom arguments"
+msgstr "Свои параметры"
+
+msgid "Use the tester below to find a strategy: different ISPs require different strategies."
+msgstr "Подберите стратегию тестером ниже: у разных провайдеров работают разные."
+
+msgid "DPI Bypass"
+msgstr "Обход DPI"
+
+msgid "Both engines bypass blocking and throttling on the router without a VPN server: they alter the start of a connection so your ISP's DPI cannot identify the site. Helps with domain-based blocking and throttling (YouTube, Discord), but not IP-based blocking. Route traffic to an engine using the Routing tab or the buttons below."
+msgstr "Оба движка снимают блокировки и замедление прямо на роутере, без VPN-сервера: они искажают начало соединения так, что DPI провайдера не может распознать сайт. Помогает против блокировки по имени сайта и замедления (YouTube, Discord), но не против блокировки по IP-адресу. Направлять трафик в движок нужно правилами на вкладке «Маршрутизация» или кнопками ниже."
+
+msgid "A local SOCKS proxy operating at the connection level with low CPU usage. Requires the byedpi package (ciadpi binary)."
+msgstr "Локальный SOCKS-прокси: работает на уровне соединений, почти не нагружает процессор. Нужен пакет byedpi (бинарник ciadpi)."
+
+msgid "ciadpi arguments"
+msgstr "Параметры ciadpi"
+
+msgid "For example: --disorder 1 --tlsrec 1+s. Omit -i and -p; the service sets them."
+msgstr "Например: --disorder 1 --tlsrec 1+s. Без -i и -p — их задаёт служба."
+
+msgid "Operates at the packet level through NFQUEUE and modifies the handshake on the fly; handles QUIC better. Requires zapret2 (nfqws2) and kmod-nft-queue. Disable the standalone zapret2 service if installed; Xray manages the traffic."
+msgstr "Работает на уровне пакетов через NFQUEUE и меняет рукопожатие «на лету»; лучше справляется с QUIC. Нужны пакеты zapret2 (nfqws2) и kmod-nft-queue. Собственную службу zapret2, если она установлена, отключите — пакетами управляет Xray."
+
+msgid "nfqws2 arguments"
+msgstr "Параметры nfqws2"
+
+msgid "Separate profiles with --new, for example: --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multidisorder:pos=1,midsld. Omit --qnum and --lua-init; the service sets them. ${FAKE} is replaced with the zapret2 fake packet directory."
+msgstr "Профили через --new, например: --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multidisorder:pos=1,midsld. Без --qnum и --lua-init — их задаёт служба; ${FAKE} заменяется на папку с фейками zapret2."
+
+msgid "Discord voice bypass"
+msgstr "Обход для голоса Discord"
+
+msgid "Adds fake packets for Discord voice UDP traffic (ports 50000-65535). The button below also creates a routing rule for it."
+msgstr "Добавляет фейки для голосовых UDP-пакетов Discord (порты 50000–65535). Кнопка ниже создаст и правило для них."
+
+msgid "NFQUEUE number"
+msgstr "Номер очереди NFQUEUE"
+
+msgid "Strategy Tester"
+msgstr "Тестер стратегий"
+
+msgid "Test sites"
+msgstr "Сайты для проверки"
+
+msgid "A site passes if it responds within the timeout. Sites blocked by IP will fail with every preset."
+msgstr "Сайт считается открытым, если ответил за отведённое время. Заблокированные по IP сайты не откроются ни одним пресетом."
+
+msgid "Timeout (seconds)"
+msgstr "Время ожидания, с"
+
+msgid "Quick Actions"
+msgstr "Быстрые действия"
+
+msgid "YouTube and Discord via ByeDPI"
+msgstr "YouTube и Discord через ByeDPI"
+
+msgid "YouTube and Discord via Zapret 2"
+msgstr "YouTube и Discord через Zapret 2"
+
+msgid "Preset Tests"
+msgstr "Проверка пресетов"
+
+msgid "Tests use saved settings: apply changes first if you edited the site list. Testing puts a noticeable load on the router."
+msgstr "Проверяются сохранённые настройки: если меняли список сайтов, сначала примените изменения. Пока идёт проверка, роутер заметно нагружен."
+
+msgid "Test ByeDPI presets"
+msgstr "Проверить пресеты ByeDPI"
+
+msgid "Test Zapret 2 presets"
+msgstr "Проверить пресеты Zapret 2"
+
+msgid "Stop"
+msgstr "Остановить"
+
+msgid "Could not parse the ss link"
+msgstr "не удалось разобрать ss-ссылку"
+
+msgid "Could not parse the hysteria2 link"
+msgstr "не удалось разобрать hysteria2-ссылку"
+
+msgid "Unsupported scheme: %s"
+msgstr "схема «%s» не поддерживается"
+
+msgid "The link is missing an address, port, or key"
+msgstr "в ссылке нет адреса, порта или ключа"
+
+msgid "Direct"
+msgstr "Напрямую"
+
+msgid "DPI Bypass: ByeDPI"
+msgstr "Обход DPI: ByeDPI"
+
+msgid "DPI Bypass: Zapret 2"
+msgstr "Обход DPI: Zapret 2"
+
+msgid "%s (disabled)"
+msgstr "%s (выключен)"
+
+msgid "%s (not found)"
+msgstr "%s (не найден)"
+
+msgid "Block"
+msgstr "Блокировать"
+
+msgid "Balancer: %s"
+msgstr "Балансировщик: %s"
+
+msgid "Russian sites directly"
+msgstr "Российские сайты напрямую"
+
+msgid "Russian IP addresses directly"
+msgstr "Российские IP-адреса напрямую"
+
+msgid "Torrents directly"
+msgstr "Торренты напрямую"
+
+msgid "disorder 1 - basic for Linux"
+msgstr "disorder 1 — базовый для Linux"
+
+msgid "split at SNI"
+msgstr "split по SNI"
+
+msgid "split in the middle of SNI"
+msgstr "split в середине SNI"
+
+msgid "disorder at SNI"
+msgstr "disorder по SNI"
+
+msgid "split + disorder at SNI"
+msgstr "split + disorder по SNI"
+
+msgid "double disorder"
+msgstr "двойной disorder"
+
+msgid "tlsrec: split the TLS record at SNI"
+msgstr "tlsrec: TLS-запись делится в SNI"
+
+msgid "tlsrec only on connection reset (auto)"
+msgstr "tlsrec только при обрыве (auto)"
+
+msgid "OOB byte at SNI"
+msgstr "OOB-байт в SNI"
+
+msgid "fake with SNI www.google.com"
+msgstr "fake с SNI www.google.com"
+
+msgid "HTTP only: Host case and spaces"
+msgstr "только HTTP: регистр и пробелы Host"
+
+msgid "disorder + fake QUIC/UDP packets"
+msgstr "disorder + фейки для QUIC/UDP"
+
+msgid "combined with automatic selection"
+msgstr "комбинированный с автоподбором"
+
+msgid "Universal: fake (md5) + multidisorder"
+msgstr "Универсальный: fake (md5) + multidisorder"
+
+msgid "YouTube: fake with google SNI + multidisorder"
+msgstr "YouTube: fake с SNI google + multidisorder"
+
+msgid "multisplit with seqovl"
+msgstr "multisplit с seqovl"
+
+msgid "fake with autottl + multidisorder"
+msgstr "fake с autottl + multidisorder"
+
+msgid "fake without ACK (datanoack)"
+msgstr "fake без ACK (datanoack)"
+
+msgid "fakedsplit with invalid ACK"
+msgstr "fakedsplit с неверным ACK"
+
+msgid "Packet splitting only, no fake packets"
+msgstr "Только деление пакетов, без фейков"
+
+msgid "multidisorder only, no fake packets"
+msgstr "Только multidisorder, без фейков"
+
+msgid "syndata + small TCP window"
+msgstr "syndata + маленькое окно TCP"
+
+msgid "hostfakesplit: fake segments with a different SNI"
+msgstr "hostfakesplit: фейковые части с другим SNI"
+
+msgid "Xray did not start"
+msgstr "xray не запустился"
+
+msgid "Xray did not start; check the settings"
+msgstr "xray не запустился — проверьте параметры"
+
+msgid "Invalid identifier"
+msgstr "неверный идентификатор"
+
+msgid "Unknown engine"
+msgstr "неизвестный движок"
+
+msgid "Invalid preset list"
+msgstr "неверный список пресетов"
+
+msgid "A test is already running"
+msgstr "проверка уже идёт"
+
+msgid "Execution failed"
+msgstr "ошибка выполнения"
+
+msgid "Could not create nftables rules; is kmod-nft-queue installed?"
+msgstr "не удалось создать правила nftables — установлен ли kmod-nft-queue?"
+
+msgid "Temporary Xray instance did not start"
+msgstr "временный Xray не запустился"
+
+msgid "zapret2 Lua scripts not found (zapret-lib.lua)"
+msgstr "не найдены Lua-скрипты zapret2 (zapret-lib.lua)"
+
+msgid "Binary not found: %s"
+msgstr "не найден бинарник %s"
+
+msgid "Enable the SOCKS5 port on the General tab to download through the proxy"
+msgstr "для загрузки через прокси включите порт SOCKS5 на вкладке «Общие»"
+
+msgid "Could not download the subscription (curl: %d)"
+msgstr "не удалось скачать подписку (curl: %d)"
+
+msgid "Subscription not found; save the settings"
+msgstr "подписка не найдена — сохраните настройки"
+
+msgid "Subscription URL is missing"
+msgstr "не указан адрес подписки"
+
+msgid "No supported servers in the response; try a different User-Agent"
+msgstr "в ответе нет поддерживаемых серверов — попробуйте другой User-Agent"
+
+msgid "Hysteria2 requires Xray 26.3.27 or later"
+msgstr "Hysteria2 требует Xray 26.3.27 или новее"
+
+msgid "Server not found; save the settings"
+msgstr "сервер не найден — сохраните настройки"
+
+msgid "Invalid link"
+msgstr "некорректная ссылка"
+
+msgid "Server address is missing"
+msgstr "не найден адрес сервера"
+
+msgid "vmess: invalid base64"
+msgstr "vmess: не base64"
+
+msgid "DNS"
+msgstr "DNS"
+
+msgid "geosite:category-ru, domain:example.ru, full:host.example.com"
+msgstr "geosite:category-ru, domain:example.ru, full:host.example.com"
+
+msgid "ByeDPI"
+msgstr "ByeDPI"
+
+msgid "Zapret 2"
+msgstr "Zapret 2"
+
+msgid "KeyLink"
+msgstr "KeyLink"
+
+msgid "UUID"
+msgstr "UUID"
+
+msgid "Flow"
+msgstr "Flow"
+
+msgid "SNI"
+msgstr "SNI"
+
+msgid "Short ID (sid)"
+msgstr "Short ID (sid)"
+
+msgid "SpiderX (spx)"
+msgstr "SpiderX (spx)"
+
+msgid "ALPN"
+msgstr "ALPN"
+
+msgid "Hysteria2"
+msgstr "Hysteria2"
+
+msgid "Host"
+msgstr "Host"
+
+msgid "gRPC serviceName"
+msgstr "gRPC serviceName"
+
+msgid "geoip:ru, 1.2.3.0/24, 8.8.8.8"
+msgstr "geoip:ru, 1.2.3.0/24, 8.8.8.8"
+
+msgid "53, 443, 1000-2000"
+msgstr "53, 443, 1000-2000"
+
+msgid "%s: %s"
+msgstr "%s: %s"
+
+msgid "User-Agent"
+msgstr "User-Agent"
+
+msgid "disorder + tlsrec"
+msgstr "disorder + tlsrec"
+
+msgid "split + tlsrec"
+msgstr "split + tlsrec"
+
+msgid "disoob"
+msgstr "disoob"
+
+msgid "fake + md5sig"
+msgstr "fake + md5sig"
+
+msgid "fake, TTL 8"
+msgstr "fake, TTL 8"
+
+msgid "fake, TTL 5"
+msgstr "fake, TTL 5"
+
+msgid "disorder + fake"
+msgstr "disorder + fake"
+
+msgid "fake + tlsrec"
+msgstr "fake + tlsrec"
+
+msgid "fakeddisorder + md5"
+msgstr "fakeddisorder + md5"
+
+msgid "KeyLink update"
+msgstr "Обновление KeyLink"
+
+msgid "Close"
+msgstr "Закрыть"
+
+msgid "Cancel"
+msgstr "Отмена"
+
+msgid "Checking for updates..."
+msgstr "Проверка обновлений..."
+
+msgid "unknown"
+msgstr "неизвестна"
+
+msgid "Installed version: %s"
+msgstr "Установленная версия: %s"
+
+msgid "Latest release: %s"
+msgstr "Последний релиз: %s"
+
+msgid "You have the latest version."
+msgstr "У вас последняя версия."
+
+msgid "Settings are kept. KeyLink restarts at the end of the update; the connection may drop for a few seconds."
+msgstr "Настройки сохранятся. В конце обновления KeyLink перезапустится, соединение может пропасть на несколько секунд."
+
+msgid "Reinstall"
+msgstr "Переустановить"
+
+msgid "Update and restart"
+msgstr "Обновить и перезапустить"
+
+msgid "Starting update..."
+msgstr "Запуск обновления..."
+
+msgid "Updating KeyLink..."
+msgstr "Обновление KeyLink..."
+
+msgid "Update complete: %s. Reload the page to load the new interface."
+msgstr "Обновление завершено: %s. Обновите страницу, чтобы загрузить новый интерфейс."
+
+msgid "Reload page"
+msgstr "Обновить страницу"
+
+msgid "Update failed. See the log below."
+msgstr "Обновление не удалось. Подробности в журнале ниже."
+
+msgid "Version"
+msgstr "Версия"
+
+msgid "Installed version is unknown (installed before v0.3.4 or from source)."
+msgstr "Установленная версия неизвестна (установлено до v0.3.4 или из исходников)."
+
+msgid "Check for updates"
+msgstr "Проверить обновления"
+
+msgid "Could not check for updates"
+msgstr "Не удалось проверить обновления"
+
+msgid "An update is already running"
+msgstr "Обновление уже идёт"
+
+msgid "Service"
+msgstr "Служба"
+
+msgid "Restart"
+msgstr "Перезапустить"
+
+msgid "Restarts Xray, DPI bypass engines, and firewall rules with the saved settings. Unsaved changes on this page are not applied."
+msgstr "Перезапускает Xray, движки обхода DPI и правила файрвола с сохранёнными настройками. Несохранённые изменения на этой странице не применяются."
+
+msgid "KeyLink restarted."
+msgstr "KeyLink перезапущен."
+
+msgid "KeyLink is stopped: it is disabled or failed to start. See logread -e keylink."
+msgstr "KeyLink остановлен: служба выключена или не запустилась. Подробности: logread -e keylink."

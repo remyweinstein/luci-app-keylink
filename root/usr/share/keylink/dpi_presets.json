@@ -1,0 +1,82 @@
+{
+	"byedpi": [
+		{ "id": "disorder1",        "name": "disorder 1 - basic for Linux",            "args": "--disorder 1" },
+		{ "id": "split_sni",        "name": "split at SNI",                                "args": "--split 1+s" },
+		{ "id": "split_mid_sni",    "name": "split in the middle of SNI",                        "args": "--split 0+sm" },
+		{ "id": "disorder_sni",     "name": "disorder at SNI",                             "args": "--disorder 1+s" },
+		{ "id": "split_disorder",   "name": "split + disorder at SNI",                     "args": "--split 1+s --disorder 3+s" },
+		{ "id": "multi_disorder",   "name": "double disorder",                            "args": "--disorder 1 --disorder 3+s" },
+		{ "id": "tlsrec",           "name": "tlsrec: split the TLS record at SNI",            "args": "--tlsrec 3+s" },
+		{ "id": "disorder_tlsrec",  "name": "disorder + tlsrec",                           "args": "--disorder 1 --tlsrec 1+s" },
+		{ "id": "split_tlsrec",     "name": "split + tlsrec",                              "args": "--split 1 --tlsrec 3+s" },
+		{ "id": "auto_tlsrec",      "name": "tlsrec only on connection reset (auto)",             "args": "--disorder 1 --auto=torst --tlsrec 1+s" },
+		{ "id": "oob_sni",          "name": "OOB byte at SNI",                              "args": "--oob 3+s" },
+		{ "id": "disoob",           "name": "disoob",                                      "args": "--disoob 3 --disorder 7" },
+		{ "id": "fake_md5",         "name": "fake + md5sig",                               "args": "--fake -1 --md5sig" },
+		{ "id": "fake_ttl8",        "name": "fake, TTL 8",                                 "args": "--fake -1 --ttl 8" },
+		{ "id": "fake_ttl5",        "name": "fake, TTL 5",                                 "args": "--fake -1 --ttl 5" },
+		{ "id": "fake_sni_google",  "name": "fake with SNI www.google.com",                   "args": "--fake -1 --ttl 6 --fake-sni www.google.com --fake-tls-mod rand" },
+		{ "id": "fake_disorder",    "name": "disorder + fake",                             "args": "--disorder 1 --fake -1 --ttl 8" },
+		{ "id": "fake_tlsrec",      "name": "fake + tlsrec",                               "args": "--fake -1 --md5sig --tlsrec 1+s --fake-tls-mod rand" },
+		{ "id": "http_mods",        "name": "HTTP only: Host case and spaces",         "args": "--mod-http hcsmix,dcsmix,rmspace --split 1+h" },
+		{ "id": "quic_fake",        "name": "disorder + fake QUIC/UDP packets",               "args": "--disorder 1 --tlsrec 1+s --udp-fake 3" },
+		{ "id": "auto_combo",       "name": "combined with automatic selection",              "args": "--split 1+s --disorder 3+s --auto=torst,ssl_err --tlsrec 1+s --auto=torst,ssl_err --fake -1 --md5sig" }
+	],
+	"zapret": [
+		{
+			"id": "fake_md5_disorder",
+			"name": "Universal: fake (md5) + multidisorder",
+			"args": "--filter-tcp=80 --filter-l7=http --out-range=-d10 --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2 --new --filter-tcp=443 --filter-l7=tls --out-range=-d10 --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tcp_seq=-10000:repeats=6 --lua-desync=multidisorder:pos=midsld --new --filter-udp=443 --filter-l7=quic --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6"
+		},
+		{
+			"id": "youtube_google_sni",
+			"name": "YouTube: fake with google SNI + multidisorder",
+			"args": "--blob=quic_google:@${FAKE}/quic_initial_www_google_com.bin --filter-tcp=443 --filter-l7=tls --out-range=-d10 --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=11:tls_mod=rnd,dupsid,sni=www.google.com --lua-desync=multidisorder:pos=1,midsld --new --filter-udp=443 --filter-l7=quic --payload=quic_initial --lua-desync=fake:blob=quic_google:repeats=11"
+		},
+		{
+			"id": "seqovl_split",
+			"name": "multisplit with seqovl",
+			"args": "--filter-tcp=443 --filter-l7=tls --out-range=-d10 --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tls_mod=rnd,rndsni,dupsid --lua-desync=multisplit:pos=1:seqovl=5:seqovl_pattern=0x1603030000 --new --filter-tcp=80 --filter-l7=http --out-range=-d10 --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2 --new --filter-udp=443 --filter-l7=quic --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6"
+		},
+		{
+			"id": "autottl_disorder",
+			"name": "fake with autottl + multidisorder",
+			"args": "--filter-tcp=443 --filter-l7=tls --out-range=-d10 --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:ip_autottl=-2,3-20:ip6_autottl=-2,3-20:repeats=6 --lua-desync=multidisorder:pos=1,midsld --new --filter-tcp=80 --filter-l7=http --out-range=-d10 --payload=http_req --lua-desync=fake:blob=fake_default_http:ip_autottl=-2,3-20:ip6_autottl=-2,3-20 --lua-desync=fakedsplit:ip_autottl=-2,3-20:ip6_autottl=-2,3-20:tcp_md5 --new --filter-udp=443 --filter-l7=quic --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6"
+		},
+		{
+			"id": "datanoack",
+			"name": "fake without ACK (datanoack)",
+			"args": "--filter-tcp=443 --filter-l7=tls --out-range=-d10 --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_flags_unset=ack:tls_mod=rnd,rndsni,dupsid,padencap --lua-desync=multidisorder:pos=midsld --new --filter-udp=443 --filter-l7=quic --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6"
+		},
+		{
+			"id": "fakedsplit_badack",
+			"name": "fakedsplit with invalid ACK",
+			"args": "--filter-tcp=443 --filter-l7=tls --out-range=-d10 --payload=tls_client_hello --lua-desync=fakedsplit:pos=midsld:tcp_ack=-66000:tcp_ts_up --new --filter-tcp=80 --filter-l7=http --out-range=-d10 --payload=http_req --lua-desync=fakedsplit:pos=method+2:tcp_ack=-66000:tcp_ts_up"
+		},
+		{
+			"id": "fakeddisorder_md5",
+			"name": "fakeddisorder + md5",
+			"args": "--filter-tcp=443 --filter-l7=tls --out-range=-d10 --payload=tls_client_hello --lua-desync=fakeddisorder:pos=midsld:tcp_md5 --new --filter-udp=443 --filter-l7=quic --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6"
+		},
+		{
+			"id": "split_only",
+			"name": "Packet splitting only, no fake packets",
+			"args": "--filter-tcp=443 --filter-l7=tls --out-range=-d10 --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld --new --filter-tcp=80 --filter-l7=http --out-range=-d10 --payload=http_req --lua-desync=multisplit:pos=method+2"
+		},
+		{
+			"id": "disorder_only",
+			"name": "multidisorder only, no fake packets",
+			"args": "--filter-tcp=443 --filter-l7=tls --out-range=-d10 --payload=tls_client_hello --lua-desync=multidisorder:pos=1,midsld"
+		},
+		{
+			"id": "syndata_wssize",
+			"name": "syndata + small TCP window",
+			"args": "--filter-tcp=443 --out-range=-n4 --lua-desync=wssize:wsize=1:scale=6 --lua-desync=syndata --lua-desync=multisplit:pos=midsld"
+		},
+		{
+			"id": "hostfakesplit",
+			"name": "hostfakesplit: fake segments with a different SNI",
+			"args": "--filter-tcp=443 --filter-l7=tls --out-range=-d10 --payload=tls_client_hello --lua-desync=hostfakesplit:tcp_md5 --new --filter-tcp=80 --filter-l7=http --out-range=-d10 --payload=http_req --lua-desync=hostfakesplit:tcp_md5"
+		}
+	]
+}

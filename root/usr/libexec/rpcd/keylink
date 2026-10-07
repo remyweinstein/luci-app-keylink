@@ -1,0 +1,77 @@
+#!/bin/sh
+. /usr/share/libubox/jshn.sh
+
+valid_sid() {
+	case "$1" in
+		''|*[!A-Za-z0-9_]*) echo '{ "error": "Invalid identifier" }'; return 1 ;;
+	esac
+}
+
+case "$1" in
+list)
+	echo '{ "ping": { "sid": "str", "url": "str" }, "update_sub": { "sid": "str" }, "dpi_test_start": { "engine": "str", "presets": "str" }, "dpi_test_status": {}, "dpi_test_stop": {}, "update_check": {}, "update_start": {}, "update_status": {}, "restart": {} }'
+	;;
+call)
+	read -r input
+	json_load "$input"
+	json_get_var sid sid
+
+	D=/tmp/keylink-dpitest
+
+	case "$2" in
+	dpi_test_start)
+		json_get_var engine engine
+		json_get_var presets presets
+		case "$engine" in byedpi|zapret) ;; *) echo '{ "error": "Unknown engine" }'; exit 0 ;; esac
+		case "$presets" in *[!A-Za-z0-9_\ ]*) echo '{ "error": "Invalid preset list" }'; exit 0 ;; esac
+		if [ -f "$D/pid" ] && kill -0 "$(cat "$D/pid")" 2>/dev/null; then
+			echo '{ "error": "A test is already running" }'; exit 0
+		fi
+		( /usr/libexec/keylink/dpi-test.sh "$engine" $presets </dev/null >/dev/null 2>&1 & )
+		echo '{ "started": true }'
+		;;
+	dpi_test_status)
+		running=false
+		[ -f "$D/pid" ] && kill -0 "$(cat "$D/pid")" 2>/dev/null && running=true
+		info=$(cat "$D/info" 2>/dev/null); [ -n "$info" ] || info='{}'
+		err=$(tr -d '"\\' < "$D/error" 2>/dev/null | tr '\n\t' '  ')
+		if [ -s "$D/results" ]; then
+			results=$(awk 'BEGIN { printf "[" } NR > 1 { printf "," } { printf "%s", $0 } END { printf "]" }' "$D/results")
+		else
+			results='[]'
+		fi
+		printf '{ "running": %s, "info": %s, "results": %s, "error": "%s" }\n' "$running" "$info" "$results" "$err"
+		;;
+	dpi_test_stop)
+		touch "$D/stop" 2>/dev/null
+		[ -f "$D/pid" ] && kill "$(cat "$D/pid")" 2>/dev/null
+		echo '{ "stopped": true }'
+		;;
+	restart)
+		/etc/init.d/keylink restart >/dev/null 2>&1
+		echo "{ \"rc\": $? }"
+		;;
+	update_check|update_start|update_status)
+		/usr/libexec/keylink/update.sh "${2#update_}"
+		;;
+	ping)
+		valid_sid "$sid" || exit 0
+		json_get_var url url
+		[ -z "$url" ] && url=$(uci -q get keylink.main.probe_url)
+		case "$url" in
+			http://*|https://*) ;;
+			*) url=https://www.gstatic.com/generate_204 ;;
+		esac
+		/usr/libexec/keylink/ping.sh "$sid" "$url"
+		;;
+	update_sub)
+		valid_sid "$sid" || exit 0
+		out=$(ucode /usr/share/keylink/subscribe.uc update "$sid")
+		rc=$?
+		# перезапуск в фоне, чтобы интерфейс не ждал
+		[ $rc = 10 ] && ( /etc/init.d/keylink reload >/dev/null 2>&1 & )
+		[ -n "$out" ] && echo "$out" || echo '{ "error": "Execution failed" }'
+		;;
+	esac
+	;;
+esac
