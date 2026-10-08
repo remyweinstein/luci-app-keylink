@@ -10,10 +10,10 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out tagged source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Prepare release files
         env:
@@ -43,6 +43,9 @@ jobs:
           sed "s|__REPO__|$REPOSITORY|g" install.sh > dist/install.sh
           tar -czf dist/luci-app-keylink.tar.gz -C dist luci-app-keylink
 
+          mkdir -p dist/package-output
+          chmod 777 dist/package-output
+
       - name: Build IPK package
         env:
           REPOSITORY: ${{ github.repository }}
@@ -50,7 +53,7 @@ jobs:
           set -eu
           docker run --rm \
             -v "$PWD/dist/luci-app-keylink:/source:ro" \
-            -v "$PWD/dist:/output" \
+            -v "$PWD/dist/package-output:/output" \
             -e KEYLINK_REPO="$REPOSITORY" \
             -w /builder \
             openwrt/sdk:x86-64-23.05.6 \
@@ -75,7 +78,7 @@ jobs:
           set -eu
           docker run --rm \
             -v "$PWD/dist/luci-app-keylink:/source:ro" \
-            -v "$PWD/dist:/output" \
+            -v "$PWD/dist/package-output:/output" \
             -e KEYLINK_REPO="$REPOSITORY" \
             -w /builder \
             openwrt/sdk:x86-64-25.12.3 \
@@ -92,6 +95,8 @@ jobs:
               [ -n "$package" ] || { echo "APK package was not produced" >&2; exit 1; }
               cp "$package" /output/luci-app-keylink.apk
             '
+          cp dist/package-output/luci-app-keylink.ipk dist/
+          cp dist/package-output/luci-app-keylink.apk dist/
 
       - name: Publish GitHub release
         env:
