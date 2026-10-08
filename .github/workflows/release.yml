@@ -91,7 +91,7 @@ jobs:
                 package/feeds/luci/luci-app-keylink
               make defconfig
               make package/luci-app-keylink/compile V=s -j2
-              package=$(find bin/packages -type f -name "luci-app-keylink_*.apk" -print -quit)
+              package=$(find bin/packages -type f -name "luci-app-keylink-*.apk" -print -quit)
               [ -n "$package" ] || { echo "APK package was not produced" >&2; exit 1; }
               cp "$package" /output/luci-app-keylink.apk
             '
