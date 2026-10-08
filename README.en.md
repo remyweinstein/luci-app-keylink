@@ -27,7 +27,7 @@ All settings are stored in UCI (`/etc/config/keylink`). The interface only edits
 - Xray-core. Hysteria2 requires version 26.3.27 or later (check with `xray version`); if the repository version is older, the installer can install an official build.
 - Around 30-40 MB of free storage, mostly for Xray and geo databases.
 
-The package installs these dependencies: `xray-core`, `ucode`, `ucode-mod-uci`, `ucode-mod-fs`, `kmod-nft-tproxy`, `curl`. The `v2ray-geosite` (~2 MB) and `v2ray-geoip` (~22 MB) databases are installed when there is enough space. Without them, all rules except those using `geosite:`/`geoip:` still work.
+The installer installs these dependencies: `xray-core`, `ucode`, `ucode-mod-uci`, `ucode-mod-fs`, `kmod-nft-tproxy`, `curl`. The `v2ray-geosite` (~2 MB) and `v2ray-geoip` (~22 MB) databases are installed when there is enough space. Without them, all rules except those using `geosite:`/`geoip:` still work.
 
 DPI bypass requires additional packages, installed separately:
 
@@ -58,6 +58,19 @@ wget -qO- https://github.com/remyweinstein/luci-app-keylink/releases/latest/down
 
 The release installer already knows where to download the archive. To use a different source, specify it explicitly: `KEYLINK_URL=https://example.com/luci-app-keylink.tar.gz`.
 
+### OpenWrt package
+
+Releases also include packages for OpenWrt's package managers: `.ipk` is built for OpenWrt 23.05 (opkg), and `.apk` for OpenWrt 25.12 (apk). Use the package matching your system:
+
+```sh
+opkg update
+opkg install ./luci-app-keylink.ipk
+# or with apk; the release package is unsigned:
+apk add --allow-untrusted ./luci-app-keylink.apk
+```
+
+Package installation installs required dependencies and registers the KeyLink service. Optional geoip/geosite databases and DPI engines are not installed by the package. If you enable the transparent LAN proxy, install `kmod-nft-tproxy` from the repository matching your router and OpenWrt version. Use the installer above for other OpenWrt versions.
+
 ### Creating a release
 
 GitHub Actions creates a release automatically when a tag prefixed with `v` is pushed. For example, to publish `v1.0.0`:
@@ -67,7 +80,7 @@ git tag -a v1.0.0 -m "Release v1.0.0"
 git push origin v1.0.0
 ```
 
-The workflow creates a GitHub Release containing `luci-app-keylink.tar.gz` and a configured `install.sh`.
+The workflow creates a GitHub Release containing `luci-app-keylink.tar.gz`, a configured `install.sh`, and `luci-app-keylink.ipk` / `luci-app-keylink.apk`.
 
 The installer:
 
@@ -96,7 +109,7 @@ If GitHub is unavailable, specify a mirror: `GH_MIRROR=https://your.mirror sh in
 
 ### Updating
 
-You can update from LuCI: General → Version → Check for updates. The button shows the installed and latest versions and runs the latest release installer (`install.sh -y --no-xray-update`) settings are kept, KeyLink restarts at the end, and progress is shown in the dialog. From the command line, use the same command as for installation.
+You can update from LuCI: General → Version → Check for updates. The button shows the installed and latest versions; package installs are updated through apk/opkg, while installer-based installs run the latest release installer (`install.sh -y --no-xray-update`). Settings are kept, KeyLink restarts at the end, and progress is shown in the dialog. From the command line, install the newer `.apk`/`.ipk` package or use the installer command.
 
 Uninstalling first stops the service: dnsmasq settings are restored, and nftables rules and the cron job are removed. The xray-core, byedpi, and zapret2 packages remain installed and can be removed separately.
 

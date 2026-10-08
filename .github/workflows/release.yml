@@ -21,8 +21,15 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           set -eu
+          case "$TAG" in
+            v*) ;;
+            *) echo "Release tag must start with v" >&2; exit 1 ;;
+          esac
+          safe_tag=$(printf '%s' "$TAG" | tr -cd 'A-Za-z0-9._-')
+          [ "$safe_tag" = "$TAG" ] || { echo "Release tag contains unsupported characters" >&2; exit 1; }
           mkdir -p dist
           git archive --format=tar --prefix=luci-app-keylink/ "$TAG" | tar -xf - -C dist
+          printf '%s\n' "$TAG" > dist/luci-app-keylink/VERSION
 
           git clone --depth=1 --filter=blob:none --sparse \
             https://github.com/openwrt/luci.git "$RUNNER_TEMP/luci"
@@ -36,6 +43,56 @@ jobs:
           sed "s|__REPO__|$REPOSITORY|g" install.sh > dist/install.sh
           tar -czf dist/luci-app-keylink.tar.gz -C dist luci-app-keylink
 
+      - name: Build IPK package
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -eu
+          docker run --rm \
+            -v "$PWD/dist/luci-app-keylink:/source:ro" \
+            -v "$PWD/dist:/output" \
+            -e KEYLINK_REPO="$REPOSITORY" \
+            -w /builder \
+            openwrt/sdk:x86-64-23.05.6 \
+            sh -ec '
+              ./scripts/feeds update -a
+              ./scripts/feeds install -a
+              mkdir -p feeds/luci/applications/luci-app-keylink
+              cp -R /source/. feeds/luci/applications/luci-app-keylink/
+              ln -s ../../../feeds/luci/applications/luci-app-keylink \
+                package/feeds/luci/luci-app-keylink
+              make defconfig
+              make package/luci-app-keylink/compile V=s -j2
+              package=$(find bin/packages -type f -name "luci-app-keylink_*.ipk" -print -quit)
+              [ -n "$package" ] || { echo "IPK package was not produced" >&2; exit 1; }
+              cp "$package" /output/luci-app-keylink.ipk
+            '
+
+      - name: Build APK package
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -eu
+          docker run --rm \
+            -v "$PWD/dist/luci-app-keylink:/source:ro" \
+            -v "$PWD/dist:/output" \
+            -e KEYLINK_REPO="$REPOSITORY" \
+            -w /builder \
+            openwrt/sdk:x86-64-25.12.3 \
+            sh -ec '
+              ./scripts/feeds update -a
+              ./scripts/feeds install -a
+              mkdir -p feeds/luci/applications/luci-app-keylink
+              cp -R /source/. feeds/luci/applications/luci-app-keylink/
+              ln -s ../../../feeds/luci/applications/luci-app-keylink \
+                package/feeds/luci/luci-app-keylink
+              make defconfig
+              make package/luci-app-keylink/compile V=s -j2
+              package=$(find bin/packages -type f -name "luci-app-keylink_*.apk" -print -quit)
+              [ -n "$package" ] || { echo "APK package was not produced" >&2; exit 1; }
+              cp "$package" /output/luci-app-keylink.apk
+            '
+
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -44,5 +101,7 @@ jobs:
           gh release create "$TAG" \
             dist/luci-app-keylink.tar.gz \
             dist/install.sh \
+            dist/luci-app-keylink.ipk \
+            dist/luci-app-keylink.apk \
             --title "$TAG" \
             --generate-notes

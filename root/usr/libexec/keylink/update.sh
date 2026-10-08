@@ -3,8 +3,8 @@
 # update.sh start  — запустить обновление в фоне
 # update.sh status — ход обновления: идёт ли, код завершения, конец журнала (JSON)
 #
-# Обновление скачивает install.sh последнего релиза и запускает его без вопросов:
-# установщик сохраняет настройки и в конце перезапускает KeyLink.
+# Для пакетных установок обновляет APK/IPK через менеджер пакетов; для остальных
+# скачивает install.sh последнего релиза, который сохраняет настройки и перезапускает KeyLink.
 
 . /usr/share/libubox/jshn.sh
 
@@ -52,7 +52,7 @@ start)
 	mkdir -p "$D"
 	rm -f "$D/rc"
 	: > "$D/log"
-	# установщик заменит и этот файл, поэтому обновление идёт из копии
+	# обновление может заменить этот файл, поэтому запускаем копию
 	cp "$0" "$D/update.sh"
 	# отдельная сессия, чтобы обновление пережило перезапуск rpcd
 	ss=""; command -v setsid >/dev/null 2>&1 && ss=setsid
@@ -62,13 +62,30 @@ start)
 run)
 	echo $$ > "$D/pid"
 	{
-		echo "==> $GH/$REPO/releases/latest/download/install.sh"
-		curl -fsSL --connect-timeout 15 -o "$D/install.sh" \
-			"$GH/$REPO/releases/latest/download/install.sh" &&
-		KEYLINK_REPO="$REPO" sh "$D/install.sh" -y --no-xray-update --lang "$(lang)"
+		if [ -f "$STATE/package" ]; then
+			if command -v apk >/dev/null 2>&1; then
+				echo "==> $GH/$REPO/releases/latest/download/luci-app-keylink.apk"
+				curl -fsSL --connect-timeout 15 -o "$D/luci-app-keylink.apk" \
+					"$GH/$REPO/releases/latest/download/luci-app-keylink.apk" &&
+				apk add --allow-untrusted "$D/luci-app-keylink.apk"
+			elif command -v opkg >/dev/null 2>&1; then
+				echo "==> $GH/$REPO/releases/latest/download/luci-app-keylink.ipk"
+				curl -fsSL --connect-timeout 15 -o "$D/luci-app-keylink.ipk" \
+					"$GH/$REPO/releases/latest/download/luci-app-keylink.ipk" &&
+				opkg install "$D/luci-app-keylink.ipk"
+			else
+				echo "Error: no supported package manager found"
+				false
+			fi
+		else
+			echo "==> $GH/$REPO/releases/latest/download/install.sh"
+			curl -fsSL --connect-timeout 15 -o "$D/install.sh" \
+				"$GH/$REPO/releases/latest/download/install.sh" &&
+			KEYLINK_REPO="$REPO" sh "$D/install.sh" -y --no-xray-update --lang "$(lang)"
+		fi
 	} >> "$D/log" 2>&1 </dev/null
 	echo $? > "$D/rc"
-	rm -f "$D/pid" "$D/install.sh"
+	rm -f "$D/pid" "$D/install.sh" "$D/luci-app-keylink.apk" "$D/luci-app-keylink.ipk"
 	;;
 status)
 	json_init
