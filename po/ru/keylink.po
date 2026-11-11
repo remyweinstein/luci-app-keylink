@@ -31,14 +31,17 @@ msgstr "Куда идёт трафик, который не попал ни по
 msgid "Transparent proxy for LAN"
 msgstr "Прозрачный прокси для LAN"
 
-msgid "All IPv4 traffic from LAN clients passes through Xray and the routing rules."
-msgstr "Весь IPv4-трафик клиентов из LAN проходит через Xray и правила маршрутизации."
+msgid "All IPv4 traffic from LAN clients passes through Xray and the routing rules. WireGuard sources are configured separately on the Sources tab."
+msgstr "Весь IPv4-трафик клиентов из LAN проходит через Xray и правила маршрутизации. Источники WireGuard настраиваются отдельно на вкладке «Источники»."
 
 msgid "LAN interface"
 msgstr "Интерфейс LAN"
 
-msgid "TPROXY port"
-msgstr "Порт TPROXY"
+msgid "TPROXY port (LAN and WireGuard)"
+msgstr "Порт TPROXY (LAN и WireGuard)"
+
+msgid "Shared by the LAN proxy and WireGuard sources."
+msgstr "Общий для прокси LAN и источников WireGuard."
 
 msgid "SOCKS5 port"
 msgstr "Порт SOCKS5"
@@ -918,3 +921,81 @@ msgstr "KeyLink перезапущен."
 
 msgid "KeyLink is stopped: it is disabled or failed to start. See logread -e keylink."
 msgstr "KeyLink остановлен: служба выключена или не запустилась. Подробности: logread -e keylink."
+
+msgid "Sources"
+msgstr "Источники"
+
+msgid "Extra interfaces whose IPv4 traffic KeyLink handles like LAN traffic: routing rules, the selected server or balancer, DNS, and DPI bypass. The rules are applied to incoming packets with nftables TPROXY. WireGuard is not configured here; create the tunnel in Network → Interfaces first."
+msgstr "Дополнительные интерфейсы, чей IPv4-трафик KeyLink обрабатывает так же, как трафик LAN: правила маршрутизации, выбранный сервер или балансировщик, DNS и обход DPI. Правила применяются к входящим пакетам через nftables TPROXY. Сам туннель WireGuard здесь не настраивается — создайте его в разделе «Сеть → Интерфейсы»."
+
+msgid "WireGuard Sources"
+msgstr "Источники WireGuard"
+
+msgid "Proxy traffic from WireGuard interfaces"
+msgstr "Проксировать трафик из интерфейсов WireGuard"
+
+msgid "Uses the same TPROXY inbound and port as the LAN transparent proxy. The LAN toggle on the General tab is not required, and LAN handling stays unchanged when this option is off."
+msgstr "Использует тот же TPROXY-вход и порт, что и прозрачный прокси для LAN. Включать прокси для LAN на вкладке «Общие» не обязательно, а обработка LAN не меняется, пока эта опция выключена."
+
+msgid "WireGuard interfaces"
+msgstr "Интерфейсы WireGuard"
+
+msgid "Traffic entering the selected interfaces is proxied. Only interfaces with proto \"wireguard\" in /etc/config/network are listed."
+msgstr "Трафик, входящий в выбранные интерфейсы, проксируется. В списке только интерфейсы с proto \"wireguard\" в /etc/config/network."
+
+msgid "default route, possible loop"
+msgstr "маршрут по умолчанию, возможна петля"
+
+msgid "No WireGuard interfaces found. Create one in Network → Interfaces."
+msgstr "Интерфейсы WireGuard не найдены. Создайте их в разделе «Сеть → Интерфейсы»."
+
+msgid "Source addresses inside the tunnel"
+msgstr "Адреса источников внутри туннеля"
+
+msgid "Optional. Proxy only these WireGuard client addresses or subnets, for example 10.0.0.0/24 or 10.0.0.5. Leave empty to proxy all IPv4 traffic entering the selected interfaces."
+msgstr "Необязательно. Проксировать только эти адреса или подсети клиентов WireGuard, например 10.0.0.0/24 или 10.0.0.5. Пустое поле — проксировать весь IPv4-трафик, входящий в выбранные интерфейсы."
+
+msgid "Requirements and limitations"
+msgstr "Требования и ограничения"
+
+msgid "IPv4 only. IPv6 traffic from WireGuard clients is not proxied by KeyLink."
+msgstr "Только IPv4. IPv6-трафик клиентов WireGuard KeyLink не проксирует."
+
+msgid "UDP and QUIC may not work through the proxy. Some sites and apps may fall back to TCP or fail."
+msgstr "UDP и QUIC могут не работать через прокси. Некоторые сайты и приложения перейдут на TCP или перестанут открываться."
+
+msgid "If the WireGuard interface is the router uplink or carries traffic to the proxy server, routing loops are possible. Enable logging and check the external IP after applying."
+msgstr "Если интерфейс WireGuard является аплинком роутера или через него идёт трафик к прокси-серверу, возможны петли маршрутизации. Включите журналирование и проверьте внешний IP после применения."
+
+msgid "Transparent proxying requires the kmod-nft-tproxy package and nftables (fw4)."
+msgstr "Для прозрачного прокси нужны пакет kmod-nft-tproxy и nftables (fw4)."
+
+msgid "Selected interface(s) %s look like an uplink (default route or AllowedIPs 0.0.0.0/0). Check for loops before relying on this setup."
+msgstr "Выбранные интерфейсы %s похожи на аплинк (маршрут по умолчанию или AllowedIPs 0.0.0.0/0). Проверьте петли маршрутизации, прежде чем полагаться на такую схему."
+
+msgid "DNS for WireGuard clients"
+msgstr "DNS для клиентов WireGuard"
+
+msgid "WireGuard does not push a DNS server to clients. Set it in each client configuration (or in the client app) manually."
+msgstr "WireGuard не передаёт клиентам DNS-сервер. Укажите его вручную в конфигурации каждого клиента (или в приложении клиента)."
+
+msgid "Router address inside the tunnel: %s. Use it as the DNS server on WireGuard clients."
+msgstr "Адрес роутера внутри туннеля: %s. Укажите его как DNS-сервер на клиентах WireGuard."
+
+msgid "On the DNS tab, enable Xray DNS and Use it for router and LAN DNS. Then dnsmasq accepts queries from WireGuard clients and forwards them to KeyLink."
+msgstr "На вкладке «DNS» включите «Использовать DNS Xray» и «Направить через него DNS роутера и сети». Тогда dnsmasq будет принимать запросы клиентов WireGuard и передавать их в KeyLink."
+
+msgid "If WireGuard clients use a public DNS server directly, domain-based routing may not apply and DNS queries can leak outside the tunnel."
+msgstr "Если клиенты WireGuard используют публичный DNS-сервер напрямую, маршрутизация по доменам может не сработать, а DNS-запросы будут уходить мимо туннеля."
+
+msgid "Enter an IPv4 address or CIDR, for example 10.0.0.5 or 10.0.0.0/24"
+msgstr "Укажите IPv4-адрес или CIDR, например 10.0.0.5 или 10.0.0.0/24"
+
+msgid "The router needs a route back to WireGuard clients (normally created by WireGuard AllowedIPs). Otherwise replies cannot return to the tunnel."
+msgstr "У роутера должен быть обратный маршрут к клиентам WireGuard (обычно его создаёт AllowedIPs в WireGuard). Иначе ответы не вернутся в туннель."
+
+msgid "Xray DNS is disabled. Domain-based routing may not work for WireGuard clients."
+msgstr "DNS Xray выключен. Маршрутизация по доменам для клиентов WireGuard может не работать."
+
+msgid "DNS redirection for dnsmasq is disabled. WireGuard clients that use the router as DNS will not get KeyLink DNS."
+msgstr "Перенаправление DNS для dnsmasq выключено. Клиенты WireGuard, использующие роутер как DNS, не получат DNS KeyLink."

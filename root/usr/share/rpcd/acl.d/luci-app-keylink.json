@@ -10,7 +10,7 @@
 				"service": [ "list" ],
 				"keylink": [ "ping", "dpi_test_status", "update_check", "update_status" ]
 			},
-			"uci": [ "keylink" ]
+			"uci": [ "keylink", "network" ]
 		},
 		"write": {
 			"ubus": {

@@ -158,16 +158,16 @@ return view.extend({
 		common.fillOutbounds(o, false, true);
 
 		o = s.option(form.Flag, 'tproxy', _("Transparent proxy for LAN"),
-			_("All IPv4 traffic from LAN clients passes through Xray and the routing rules."));
+			_("All IPv4 traffic from LAN clients passes through Xray and the routing rules. WireGuard sources are configured separately on the Sources tab."));
 
 		o = s.option(form.Value, 'lan_iface', _("LAN interface"));
 		o.placeholder = 'br-lan';
 		o.depends('tproxy', '1');
 
-		o = s.option(form.Value, 'tproxy_port', _("TPROXY port"));
+		o = s.option(form.Value, 'tproxy_port', _("TPROXY port (LAN and WireGuard)"),
+			_("Shared by the LAN proxy and WireGuard sources."));
 		o.datatype = 'port';
 		o.placeholder = '12345';
-		o.depends('tproxy', '1');
 
 		o = s.option(form.Value, 'socks_port', _("SOCKS5 port"), _("0 to disable."));
 		o.datatype = 'port';

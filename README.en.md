@@ -14,7 +14,7 @@ All settings are stored in UCI (`/etc/config/keylink`). The interface only edits
 - **Latency checks** for individual servers or all servers at once, using real connections.
 - **Load balancers**: lowest latency, least load, random, or round-robin. A balancer can include all servers from a subscription and use a fallback route.
 - **Routing**: rules based on domains (`geosite:`, `domain:`, `full:`, `keyword:`, `regexp:`), IP addresses (`geoip:`, CIDR), LAN devices, ports, network, and protocol. Drag and drop to reorder rules.
-- **Transparent proxy** for the entire LAN (TPROXY, IPv4), plus SOCKS5 and HTTP ports.
+- **Transparent proxy** for the entire LAN and selected WireGuard interfaces (TPROXY, IPv4), plus SOCKS5 and HTTP ports.
 - **DNS**: Russian domains are resolved through local DNS, while other domains use DoH through the tunnel. dnsmasq is redirected automatically and restored when the service stops.
 - **DPI bypass without a VPN**:
   - [ByeDPI](https://github.com/hufrea/byedpi): a SOCKS proxy with DPI desynchronization, 21 presets;
@@ -152,10 +152,82 @@ The **Services > KeyLink** section will now appear in LuCI.
 
 1. **Servers**: paste links into "Add from links", or add a subscription on the "Subscriptions" tab.
 2. **General**: enable the service, select the default route (a server or balancer), and enable the transparent proxy for LAN if needed.
-3. **Routing**: review the rules. Russian websites and torrents use a direct connection by default.
-4. Click **Save & Apply**.
+3. **Sources**: if traffic arrives from WireGuard, enable WG proxying and select the `wg0`, `wg1`, and other interfaces.
+4. **Routing**: review the rules. Russian websites and torrents use a direct connection by default.
+5. Click **Save & Apply**.
+
+If you do not use WireGuard, skip step 3: LAN handling is unchanged.
 
 If you do not have a VPN server and only need to bypass throttling of YouTube and Discord, open the **DPI Bypass** tab, find a strategy using the tester, and click the "YouTube and Discord via ..." quick-action button.
+
+## Transparent proxy for WireGuard
+
+KeyLink can send traffic entering from a WireGuard tunnel to Xray as well as LAN traffic. For WG clients this works exactly like LAN: routing rules, the selected server or balancer, KeyLink DNS, and DPI bypass are applied.
+
+### Configuring in LuCI
+
+1. Create the tunnel under **Network → Interfaces** (for example, `wg0` with the WireGuard protocol). KeyLink does not configure the tunnel itself.
+2. Open **Services → KeyLink → Sources**.
+3. Enable **Proxy traffic from WireGuard interfaces**.
+4. Select one or more interfaces. The list contains only interfaces with `proto 'wireguard'` from `/etc/config/network`; addresses are shown next to them, and interfaces that look like an uplink are marked.
+5. Optionally fill in **Source addresses inside the tunnel**: for example, `10.0.0.0/24` or `10.0.0.5`. Leaving it empty proxies all IPv4 traffic entering the selected interfaces.
+6. Click **Save & Apply**.
+
+The LAN transparent proxy on the **General** tab does not have to be enabled: WireGuard has its own toggle. Both sources share one TPROXY inbound and port (**General → TPROXY port (LAN and WireGuard)**, 12345 by default).
+
+### What is created
+
+When the option is enabled, `init.d/keylink` adds the following to the `inet keylink` table:
+
+- a `wg_ifaces` set of type `ifname` for the selected interfaces;
+- a `wg_sources4` set when source subnets are configured;
+- an `iifname @wg_ifaces ... jump keylink_proxy` rule that marks IPv4 packets and sends them to Xray's TPROXY port;
+- a shared `keylink_proxy` chain that bypasses private networks and applies `tproxy ip to 127.0.0.1:<port>`.
+
+The LAN rule (`iifname "br-lan" ... jump keylink_proxy`) stays separate and unchanged. Disabling the WG option removes its rules on the next apply; if the LAN proxy is also off, the `inet keylink` table and the routing rule are removed. Stopping the service and removing the package clear the whole table. Settings are stored in `/etc/config/keylink` and survive updates.
+
+Inspect the rules and logs:
+
+```sh
+nft list table inet keylink
+logread -e keylink
+```
+
+### UCI example
+
+```sh
+uci set keylink.main.wg_enabled='1'
+uci -q delete keylink.main.wg_ifaces
+uci add_list keylink.main.wg_ifaces='wg0'
+uci -q delete keylink.main.wg_sources
+uci add_list keylink.main.wg_sources='10.0.0.0/24'
+uci commit keylink
+/etc/init.d/keylink restart
+```
+
+### DNS for WireGuard clients
+
+WireGuard does not push a DNS server to clients: the WireGuard server configuration has no DHCP-like DNS option. Set DNS manually in each client configuration (or in the client app):
+
+```ini
+[Interface]
+Address = 10.0.0.2/24
+DNS = 10.0.0.1
+
+[Peer]
+AllowedIPs = 0.0.0.0/0
+Endpoint = router.example.com:51820
+```
+
+`10.0.0.1` is the router address inside the tunnel. On the **DNS** tab, enable **Use Xray DNS** and **Use it for router and LAN DNS**: dnsmasq then accepts WG client queries and forwards them to KeyLink, so domain rules work. If clients use a public DNS server directly, DNS queries leave the tunnel (DNS leak) and domain-based routing may not apply.
+
+### WireGuard source limitations
+
+- IPv4 only. KeyLink does not proxy IPv6 traffic from WG; disable IPv6 in the tunnel or on clients if needed.
+- UDP and QUIC may not be proxied. Some sites and apps then fall back to TCP or fail.
+- If the WG interface is the router uplink (the default route or `AllowedIPs 0.0.0.0/0`), or if traffic to the proxy server goes through it, routing loops are possible. LuCI marks such interfaces and the service logs a warning to `logread -e keylink`. Check the external IP and connection stability after enabling.
+- The router needs a route back to WireGuard clients (normally created by WireGuard `AllowedIPs`). Otherwise replies cannot return to the tunnel.
+- Transparent proxying requires `kmod-nft-tproxy` and nftables (fw4).
 
 ## Interface Language
 
@@ -238,11 +310,24 @@ Values within arguments must not contain spaces: arguments are split on spaces w
 - Disable the standalone zapret2 service.
 - With hardware flow offloading enabled, some packets bypass nftables. Try disabling it.
 
+**WireGuard traffic does not go through KeyLink, or the external IP does not change.**
+- Check that the correct interface is selected under **Sources** and that `wg_enabled` is on: `uci show keylink.main | grep wg_`.
+- Inspect the table: `nft list table inet keylink`. It should contain `set wg_ifaces`, the `iifname @wg_ifaces ... jump keylink_proxy` rule, and the `keylink_proxy` chain.
+- Make sure packets really enter that interface (`iifname`) rather than another tunnel or the LAN.
+- If **Source addresses inside the tunnel** is set, verify that the client IP belongs to that subnet.
+- Make sure `kmod-nft-tproxy` is installed and the TPROXY port is free: `netstat -lnup | grep <port>`.
+- Check `logread -e keylink`: the service logs skipped interfaces, nftables errors, and uplink warnings.
+
+**Connectivity drops or routing loops appear after enabling a WireGuard source.** The selected WG interface is probably used as an uplink or carries the connection to the proxy server. Disable the option under **Sources** and apply the settings; reboot the router if needed. Do not select the interface that carries traffic to the Xray server if it is also the default route. For diagnostics: `ip route show default`, `nft list table inet keylink`, `logread -e keylink`.
+
+**WireGuard clients cannot resolve domains, or DNS leaks.** Check that the client configuration points DNS to the router address inside the tunnel (for example, `10.0.0.1`), not to a public DNS server. On the **DNS** tab, Xray DNS and dnsmasq redirection must be enabled. Test with `nslookup example.com 10.0.0.1` on the client and check `logread -e keylink -e dnsmasq`. If dnsmasq does not listen on the WG interface, review the `dhcp`/`dnsmasq` settings (usually `localservice` and no restrictive `interface` option is enough).
+
 **The tester shows that everything works without bypass.** The sites may not currently be blocked, or throttling may start later than the initial page load. Add a URL that downloads a substantial amount of data to the test list.
 
 ## Limitations
 
-- The transparent proxy only supports IPv4. By default, DNS returns only IPv4 addresses to prevent traffic from bypassing the proxy over IPv6.
+- The transparent proxy for LAN and WireGuard only supports IPv4. By default, DNS returns only IPv4 addresses to prevent traffic from bypassing the proxy over IPv6. IPv6 traffic from WG is not proxied.
+- UDP/QUIC may not be proxied, and DNS for WireGuard clients is configured manually. Do not select a WG interface that is used as an uplink: routing loops are possible.
 - Latency checks and subscription updates use applied settings. Save and apply a new server or subscription first.
 - Xray/sing-box JSON and Clash YAML subscriptions are not supported; only link lists, either plain text or base64-encoded, are supported.
 - Servers imported from subscriptions are overwritten on each update; manual changes to them are not preserved.

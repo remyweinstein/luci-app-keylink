@@ -147,16 +147,148 @@ cleanup_tproxy() {
 	ip route flush table $RT_TABLE 2>/dev/null
 }
 
+# Linux interface names are limited to 15 characters; the allowed set keeps
+# generated nftables syntax safe when the value comes from UCI.
+valid_ifname() {
+	local name="$1"
+	[ -n "$name" ] && [ ${#name} -le 15 ] || return 1
+	case "$name" in
+		*[!A-Za-z0-9_.-]*) return 1 ;;
+	esac
+	return 0
+}
+
+# Accepts 10.0.0.0/24 and 10.0.0.1 (treated as /32) and prints a normalized
+# CIDR. Returns non-zero for anything else, so a malformed UCI value cannot
+# break nftables or inject extra rules.
+normalize_cidr4() {
+	local value="$1" addr mask octet oldifs
+	case "$value" in
+		*/*) addr="${value%/*}"; mask="${value#*/}" ;;
+		*)   addr="$value"; mask=32 ;;
+	esac
+	case "$mask" in
+		''|*[!0-9]*) return 1 ;;
+	esac
+	[ "$mask" -le 32 ] || return 1
+	case "$addr" in
+		''|.*|*.|*..*|*[!0-9.]*) return 1 ;;
+	esac
+
+	oldifs=$IFS
+	IFS=.
+	set -- $addr
+	IFS=$oldifs
+	[ $# -eq 4 ] || return 1
+	for octet in "$@"; do
+		[ -n "$octet" ] && [ "$octet" -le 255 ] || return 1
+	done
+	printf '%s/%s\n' "$addr" "$mask"
+}
+
+WG_IFACES=
+WG_IFACE_NAMES=
+WG_SOURCES=
+WG_SOURCE_LIST=
+WG_LAN=
+
+wg_is_default_route() {
+	ip route show default 2>/dev/null | awk -v iface="$1" '
+		$1 == "default" {
+			for (i = 1; i < NF; i++)
+				if ($i == "dev" && $(i + 1) == iface) found = 1
+		}
+		END { exit(found ? 0 : 1) }'
+}
+
+add_wg_iface() {
+	local name="$1" allowed
+
+	valid_ifname "$name" || {
+		logger -t keylink "WireGuard: пропущено недопустимое имя интерфейса: $name"
+		return 0
+	}
+	case " $WG_IFACE_NAMES " in *" $name "*) return 0 ;; esac
+	if [ -n "$WG_LAN" ] && [ "$name" = "$WG_LAN" ]; then
+		logger -t keylink "WireGuard $name совпадает с LAN-интерфейсом — правило WG пропущено"
+		return 0
+	fi
+
+	WG_IFACE_NAMES="$WG_IFACE_NAMES $name"
+	WG_IFACES="${WG_IFACES:+$WG_IFACES, }\"$name\""
+
+	# The interface may be the router's uplink (for example a commercial WG
+	# tunnel with AllowedIPs 0.0.0.0/0). Proxying traffic received from it can
+	# create a loop, so warn in the system log as well as in LuCI.
+	if wg_is_default_route "$name"; then
+		logger -t keylink "WireGuard $name используется как маршрут по умолчанию: возможны петли маршрутизации"
+	fi
+	allowed=$(uci -q get "network.$name.allowed_ips" 2>/dev/null) || allowed=
+	if [ "$(uci -q get "network.$name.route_allowed_ips" 2>/dev/null)" = 1 ]; then
+		case " $allowed " in
+			*" 0.0.0.0/0 "*|*" ::/0 "*)
+				logger -t keylink "WireGuard $name принимает весь трафик (AllowedIPs 0.0.0.0/0): проверьте, не является ли он аплинком"
+				;;
+		esac
+	fi
+}
+
+add_wg_source() {
+	local cidr
+	cidr=$(normalize_cidr4 "$1") || {
+		logger -t keylink "WireGuard: пропущена недопустимая подсеть: $1"
+		return 0
+	}
+	case " $WG_SOURCE_LIST " in *" $cidr "*) return 0 ;; esac
+
+	WG_SOURCE_LIST="$WG_SOURCE_LIST $cidr"
+	WG_SOURCES="${WG_SOURCES:+$WG_SOURCES, }$cidr"
+}
+
 setup_tproxy() {
-	local port lan
+	local port lan tproxy wg_enabled rc
+
 	config_get port main tproxy_port 12345
 	config_get lan main lan_iface br-lan
+	config_get_bool tproxy main tproxy 0
+	config_get_bool wg_enabled main wg_enabled 0
+
+	case "$port" in
+		''|*[!0-9]*) port=12345 ;;
+	esac
+	[ "$port" -ge 1 ] && [ "$port" -le 65535 ] || port=12345
+
+	if [ "$tproxy" = 1 ] && ! valid_ifname "$lan"; then
+		logger -t keylink "TPROXY: недопустимое имя LAN-интерфейса: $lan"
+		lan=br-lan
+	fi
+
+	WG_IFACES=
+	WG_IFACE_NAMES=
+	WG_SOURCES=
+	WG_SOURCE_LIST=
+	WG_LAN=
+	[ "$tproxy" = 1 ] && WG_LAN="$lan"
+	if [ "$wg_enabled" = 1 ]; then
+		config_list_foreach main wg_ifaces add_wg_iface
+		config_list_foreach main wg_sources add_wg_source
+		if [ -z "$WG_IFACES" ]; then
+			logger -t keylink "WireGuard: обработка включена, но интерфейсы не выбраны"
+		fi
+	fi
+
+	# Neither LAN nor WireGuard uses the transparent proxy: remove stale rules.
+	if [ "$tproxy" != 1 ] && [ -z "$WG_IFACES" ]; then
+		cleanup_tproxy
+		return 0
+	fi
 
 	cleanup_tproxy
 	ip rule add fwmark $FWMARK lookup $RT_TABLE
 	ip route replace local 0.0.0.0/0 dev lo table $RT_TABLE
 
-	nft -f - <<NFT
+	{
+		cat <<NFT
 table inet keylink {
 	set bypass4 {
 		type ipv4_addr
@@ -165,18 +297,66 @@ table inet keylink {
 			     169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16,
 			     224.0.0.0/4, 240.0.0.0/4 }
 	}
+NFT
+
+		if [ -n "$WG_IFACES" ]; then
+			cat <<NFT
+	set wg_ifaces {
+		type ifname
+		elements = { $WG_IFACES }
+	}
+NFT
+		fi
+
+		if [ -n "$WG_SOURCES" ]; then
+			cat <<NFT
+	set wg_sources4 {
+		type ipv4_addr
+		flags interval
+		elements = { $WG_SOURCES }
+	}
+NFT
+		fi
+
+		cat <<NFT
 	chain prerouting {
 		type filter hook prerouting priority mangle; policy accept;
-		iifname != "$lan" return
+NFT
+
+		if [ "$tproxy" = 1 ]; then
+			printf '\t\tiifname "%s" jump keylink_proxy\n' "$lan"
+		fi
+
+		if [ -n "$WG_IFACES" ]; then
+			if [ -n "$WG_SOURCES" ]; then
+				printf '\t\tiifname @wg_ifaces ip saddr @wg_sources4 jump keylink_proxy\n'
+			else
+				printf '\t\tiifname @wg_ifaces jump keylink_proxy\n'
+			fi
+		fi
+
+		cat <<NFT
+		return
+	}
+	chain keylink_proxy {
 		ip daddr @bypass4 return
 		ip protocol { tcp, udp } meta mark set $FWMARK tproxy ip to 127.0.0.1:$port accept
 	}
 }
 NFT
+	} | nft -f -
+	rc=$?
+
+	if [ "$rc" != 0 ]; then
+		logger -t keylink "не удалось применить правила nftables: проверьте logread -e nft"
+		cleanup_tproxy
+		return 1
+	fi
+	return 0
 }
 
 start_service() {
-	local enabled tproxy
+	local enabled
 	config_load keylink
 	config_get_bool enabled main enabled 0
 	[ "$enabled" = 1 ] || return 0
@@ -197,8 +377,9 @@ start_service() {
 	procd_set_param stderr 1
 	procd_close_instance
 
-	config_get_bool tproxy main tproxy 0
-	[ "$tproxy" = 1 ] && setup_tproxy
+	# Правила TPROXY создаются для LAN и/или выбранных WireGuard-интерфейсов.
+	# Если оба источника выключены, setup_tproxy удалит устаревшую таблицу.
+	setup_tproxy
 
 	start_dpi
 

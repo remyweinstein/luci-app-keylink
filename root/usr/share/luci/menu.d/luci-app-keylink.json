@@ -7,6 +7,14 @@
 			"path": "keylink/general"
 		}
 	},
+	"admin/services/keylink/sources": {
+		"title": "Sources",
+		"order": 15,
+		"action": {
+			"type": "view",
+			"path": "keylink/sources"
+		}
+	},
 	"admin/services/keylink/outbounds": {
 		"title": "Servers",
 		"order": 20,

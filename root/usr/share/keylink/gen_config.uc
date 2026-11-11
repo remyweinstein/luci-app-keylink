@@ -347,6 +347,13 @@ for (let b in balancers) {
 const sniff = { enabled: true, destOverride: [ 'http', 'tls', 'quic' ], routeOnly: true };
 let inbounds = [];
 
+/* WireGuard-источники используют тот же TPROXY-вход, что и LAN. Включаем его,
+ * если включён LAN-прокси или выбраны WG-интерфейсы: так WG можно включить
+ * независимо от LAN. Правила nftables создаёт init.d/keylink. */
+const wgEnabled = g.wg_enabled == '1';
+const wgIfaces = list(g.wg_ifaces) || [];
+const wgProxy = wgEnabled && length(wgIfaces);
+
 if (+g.socks_port)
 	push(inbounds, { tag: 'socks', listen: '0.0.0.0', port: +g.socks_port,
 		protocol: 'socks', settings: { udp: true }, sniffing: sniff });
@@ -355,7 +362,7 @@ if (+g.http_port)
 	push(inbounds, { tag: 'http', listen: '0.0.0.0', port: +g.http_port,
 		protocol: 'http', sniffing: sniff });
 
-if (g.tproxy == '1')
+if (g.tproxy == '1' || wgProxy)
 	push(inbounds, { tag: 'tproxy', listen: '0.0.0.0', port: +(g.tproxy_port || 12345),
 		protocol: 'dokodemo-door',
 		settings: { network: 'tcp,udp', followRedirect: true },
@@ -417,6 +424,10 @@ if (length(keys(burst)))
 			timeout: '5s'
 		}
 	};
+
+if (wgEnabled && !length(wgIfaces))
+	warn('keylink: обработка трафика WireGuard включена, но ни один интерфейс не выбран — ' +
+		'вкладка «Источники» в LuCI\n');
 
 if (length(keys(skippedServers)))
 	warn('keylink: серверы Hysteria2 пропущены — нужен Xray 26.3.27 или новее, установлен ' +

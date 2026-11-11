@@ -192,5 +192,5 @@ async function testLanguage(language) {
 }
 
 Promise.resolve().then(() => testLanguage('en')).then(() => testLanguage('ru')).then(() => {
-        console.log(`OK: ${catalog.size} translations, LMO lookups, menus, presets, errors, and all seven views in English and Russian`);
+        console.log(`OK: ${catalog.size} translations, LMO lookups, menus, presets, errors, and all ${files.length - 1} views in English and Russian`);
 }).catch(error => { console.error(error); process.exitCode = 1; });
