@@ -2,7 +2,7 @@
 # Установщик KeyLink для OpenWrt (apk и opkg). Справка: sh install.sh --help
 # KeyLink installer for OpenWrt (apk and opkg). Help: sh install.sh --help
 
-DEPS="xray-core ucode ucode-mod-uci ucode-mod-fs kmod-nft-tproxy curl"
+DEPS="xray-core ucode ucode-mod-uci ucode-mod-fs kmod-nft-tproxy kmod-nft-socket curl"
 # Базы для правил geosite:/geoip:. Необязательны: без них такие правила просто
 # пропускаются. geosite (~2 МБ) полезнее и ставится первым, geoip (~22 МБ) — если хватит места.
 GEO_DEPS="v2ray-geosite v2ray-geoip"

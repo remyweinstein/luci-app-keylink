@@ -223,14 +223,21 @@ add_wg_iface() {
 	if wg_is_default_route "$name"; then
 		logger -t keylink "WireGuard $name используется как маршрут по умолчанию: возможны петли маршрутизации"
 	fi
-	allowed=$(uci -q get "network.$name.allowed_ips" 2>/dev/null) || allowed=
-	if [ "$(uci -q get "network.$name.route_allowed_ips" 2>/dev/null)" = 1 ]; then
-		case " $allowed " in
-			*" 0.0.0.0/0 "*|*" ::/0 "*)
-				logger -t keylink "WireGuard $name принимает весь трафик (AllowedIPs 0.0.0.0/0): проверьте, не является ли он аплинком"
-				;;
-		esac
-	fi
+	# AllowedIPs задаются не в интерфейсе, а в секциях его пиров
+	# (config wireguard_<интерфейс>, в uci show — @wireguard_wg0[0] или имя)
+	uci -q show network 2>/dev/null |
+		sed -n "s/^network\.\([^.=]*\)=wireguard_$name\$/\1/p" |
+		while read -r peer; do
+			[ "$(uci -q get "network.$peer.disabled")" = 1 ] && continue
+			[ "$(uci -q get "network.$peer.route_allowed_ips")" = 1 ] || continue
+			allowed=$(uci -q get "network.$peer.allowed_ips")
+			case " $allowed " in
+				*" 0.0.0.0/0 "*|*" ::/0 "*)
+					logger -t keylink "WireGuard $name принимает весь трафик (AllowedIPs 0.0.0.0/0): проверьте, не является ли он аплинком"
+					break
+					;;
+			esac
+		done
 }
 
 add_wg_source() {
@@ -246,7 +253,7 @@ add_wg_source() {
 }
 
 setup_tproxy() {
-	local port lan tproxy wg_enabled rc
+	local port lan tproxy wg_enabled
 
 	config_get port main tproxy_port 12345
 	config_get lan main lan_iface br-lan
@@ -287,8 +294,28 @@ setup_tproxy() {
 	ip rule add fwmark $FWMARK lookup $RT_TABLE
 	ip route replace local 0.0.0.0/0 dev lo table $RT_TABLE
 
-	{
-		cat <<NFT
+	# Пакеты уже установленных TCP-соединений сразу отдаются сокету Xray по
+	# метке, через tproxy проходит только первый пакет. Так меньше нагрузка на
+	# ядро; без kmod-nft-socket правило не загрузится — тогда работаем без него.
+	if ! tproxy_rules "$tproxy" "$lan" "$port" 1 | nft -f -; then
+		logger -t keylink "nftables: правило socket недоступно (нужен kmod-nft-socket), TPROXY без него"
+		cleanup_tproxy
+		ip rule add fwmark $FWMARK lookup $RT_TABLE
+		ip route replace local 0.0.0.0/0 dev lo table $RT_TABLE
+		if ! tproxy_rules "$tproxy" "$lan" "$port" 0 | nft -f -; then
+			logger -t keylink "не удалось применить правила nftables: проверьте logread -e nft"
+			cleanup_tproxy
+			return 1
+		fi
+	fi
+	return 0
+}
+
+# tproxy_rules <lan вкл.> <lan-интерфейс> <порт> <socket 0|1> — скрипт для nft -f
+tproxy_rules() {
+	local tproxy="$1" lan="$2" port="$3" socket="$4"
+
+	cat <<NFT
 table inet keylink {
 	set bypass4 {
 		type ipv4_addr
@@ -299,60 +326,58 @@ table inet keylink {
 	}
 NFT
 
-		if [ -n "$WG_IFACES" ]; then
-			cat <<NFT
+	if [ -n "$WG_IFACES" ]; then
+		cat <<NFT
 	set wg_ifaces {
 		type ifname
 		elements = { $WG_IFACES }
 	}
 NFT
-		fi
+	fi
 
-		if [ -n "$WG_SOURCES" ]; then
-			cat <<NFT
+	if [ -n "$WG_SOURCES" ]; then
+		cat <<NFT
 	set wg_sources4 {
 		type ipv4_addr
 		flags interval
 		elements = { $WG_SOURCES }
 	}
 NFT
-		fi
+	fi
 
-		cat <<NFT
+	cat <<NFT
 	chain prerouting {
 		type filter hook prerouting priority mangle; policy accept;
 NFT
 
-		if [ "$tproxy" = 1 ]; then
-			printf '\t\tiifname "%s" jump keylink_proxy\n' "$lan"
-		fi
+	if [ "$tproxy" = 1 ]; then
+		printf '\t\tiifname "%s" jump keylink_proxy\n' "$lan"
+	fi
 
-		if [ -n "$WG_IFACES" ]; then
-			if [ -n "$WG_SOURCES" ]; then
-				printf '\t\tiifname @wg_ifaces ip saddr @wg_sources4 jump keylink_proxy\n'
-			else
-				printf '\t\tiifname @wg_ifaces jump keylink_proxy\n'
-			fi
+	if [ -n "$WG_IFACES" ]; then
+		if [ -n "$WG_SOURCES" ]; then
+			printf '\t\tiifname @wg_ifaces ip saddr @wg_sources4 jump keylink_proxy\n'
+		else
+			printf '\t\tiifname @wg_ifaces jump keylink_proxy\n'
 		fi
+	fi
 
-		cat <<NFT
+	cat <<NFT
 		return
 	}
 	chain keylink_proxy {
 		ip daddr @bypass4 return
+NFT
+
+	if [ "$socket" = 1 ]; then
+		printf '\t\tmeta l4proto tcp socket transparent 1 meta mark set %s accept\n' "$FWMARK"
+	fi
+
+	cat <<NFT
 		ip protocol { tcp, udp } meta mark set $FWMARK tproxy ip to 127.0.0.1:$port accept
 	}
 }
 NFT
-	} | nft -f -
-	rc=$?
-
-	if [ "$rc" != 0 ]; then
-		logger -t keylink "не удалось применить правила nftables: проверьте logread -e nft"
-		cleanup_tproxy
-		return 1
-	fi
-	return 0
 }
 
 start_service() {

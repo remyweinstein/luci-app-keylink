@@ -961,8 +961,8 @@ msgstr "Требования и ограничения"
 msgid "IPv4 only. IPv6 traffic from WireGuard clients is not proxied by KeyLink."
 msgstr "Только IPv4. IPv6-трафик клиентов WireGuard KeyLink не проксирует."
 
-msgid "UDP and QUIC may not work through the proxy. Some sites and apps may fall back to TCP or fail."
-msgstr "UDP и QUIC могут не работать через прокси. Некоторые сайты и приложения перейдут на TCP или перестанут открываться."
+msgid "The WireGuard interface must be in a firewall zone that accepts input, for example lan. Otherwise the router rejects the intercepted traffic."
+msgstr "Интерфейс WireGuard должен входить в зону файрвола, принимающую входящий трафик, например lan. Иначе роутер отклонит перехваченный трафик."
 
 msgid "If the WireGuard interface is the router uplink or carries traffic to the proxy server, routing loops are possible. Enable logging and check the external IP after applying."
 msgstr "Если интерфейс WireGuard является аплинком роутера или через него идёт трафик к прокси-серверу, возможны петли маршрутизации. Включите журналирование и проверьте внешний IP после применения."

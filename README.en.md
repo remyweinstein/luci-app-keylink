@@ -27,7 +27,7 @@ All settings are stored in UCI (`/etc/config/keylink`). The interface only edits
 - Xray-core. Hysteria2 requires version 26.3.27 or later (check with `xray version`); if the repository version is older, the installer can install an official build.
 - Around 30-40 MB of free storage, mostly for Xray and geo databases.
 
-The installer installs these dependencies: `xray-core`, `ucode`, `ucode-mod-uci`, `ucode-mod-fs`, `kmod-nft-tproxy`, `curl`. The `v2ray-geosite` (~2 MB) and `v2ray-geoip` (~22 MB) databases are installed when there is enough space. Without them, all rules except those using `geosite:`/`geoip:` still work.
+The installer installs these dependencies: `xray-core`, `ucode`, `ucode-mod-uci`, `ucode-mod-fs`, `kmod-nft-tproxy`, `kmod-nft-socket`, `curl`. The `v2ray-geosite` (~2 MB) and `v2ray-geoip` (~22 MB) databases are installed when there is enough space. Without them, all rules except those using `geosite:`/`geoip:` still work.
 
 DPI bypass requires additional packages, installed separately:
 
@@ -69,7 +69,7 @@ opkg install ./luci-app-keylink.ipk
 apk add --allow-untrusted ./luci-app-keylink.apk
 ```
 
-Package installation installs required dependencies and registers the KeyLink service. Optional geoip/geosite databases and DPI engines are not installed by the package. If you enable the transparent LAN proxy, install `kmod-nft-tproxy` from the repository matching your router and OpenWrt version. Use the installer above for other OpenWrt versions.
+Package installation installs required dependencies and registers the KeyLink service. Optional geoip/geosite databases and DPI engines are not installed by the package. If you enable the transparent LAN proxy, install `kmod-nft-tproxy` and `kmod-nft-socket` from the repository matching your router and OpenWrt version. Use the installer above for other OpenWrt versions.
 
 ### Creating a release
 
@@ -128,7 +128,7 @@ The built package will appear in `bin/packages/*/luci/`.
 
 ```sh
 # On the router: dependencies
-apk add xray-core ucode ucode-mod-uci ucode-mod-fs kmod-nft-tproxy v2ray-geoip v2ray-geosite curl
+apk add xray-core ucode ucode-mod-uci ucode-mod-fs kmod-nft-tproxy kmod-nft-socket v2ray-geoip v2ray-geosite curl
 # Or: opkg update && opkg install ...
 
 # From your computer: package files
@@ -182,7 +182,7 @@ When the option is enabled, `init.d/keylink` adds the following to the `inet key
 - a `wg_ifaces` set of type `ifname` for the selected interfaces;
 - a `wg_sources4` set when source subnets are configured;
 - an `iifname @wg_ifaces ... jump keylink_proxy` rule that marks IPv4 packets and sends them to Xray's TPROXY port;
-- a shared `keylink_proxy` chain that bypasses private networks and applies `tproxy ip to 127.0.0.1:<port>`.
+- a shared `keylink_proxy` chain that bypasses private networks and applies `tproxy ip to 127.0.0.1:<port>`. Packets of established TCP connections go straight to the Xray socket (`socket transparent 1`), so only the first packet of a connection passes through TPROXY; without `kmod-nft-socket` this rule is skipped.
 
 The LAN rule (`iifname "br-lan" ... jump keylink_proxy`) stays separate and unchanged. Disabling the WG option removes its rules on the next apply; if the LAN proxy is also off, the `inet keylink` table and the routing rule are removed. Stopping the service and removing the package clear the whole table. Settings are stored in `/etc/config/keylink` and survive updates.
 
@@ -224,7 +224,7 @@ Endpoint = router.example.com:51820
 ### WireGuard source limitations
 
 - IPv4 only. KeyLink does not proxy IPv6 traffic from WG; disable IPv6 in the tunnel or on clients if needed.
-- UDP and QUIC may not be proxied. Some sites and apps then fall back to TCP or fail.
+- The WG interface must be in a firewall zone with `input ACCEPT` (for example `lan`; set it in **Network → Firewall** or in the interface settings). Intercepted packets pass through the fw4 input chain, and with `input REJECT` the router rejects them.
 - If the WG interface is the router uplink (the default route or `AllowedIPs 0.0.0.0/0`), or if traffic to the proxy server goes through it, routing loops are possible. LuCI marks such interfaces and the service logs a warning to `logread -e keylink`. Check the external IP and connection stability after enabling.
 - The router needs a route back to WireGuard clients (normally created by WireGuard `AllowedIPs`). Otherwise replies cannot return to the tunnel.
 - Transparent proxying requires `kmod-nft-tproxy` and nftables (fw4).
@@ -314,6 +314,7 @@ Values within arguments must not contain spaces: arguments are split on spaces w
 - Check that the correct interface is selected under **Sources** and that `wg_enabled` is on: `uci show keylink.main | grep wg_`.
 - Inspect the table: `nft list table inet keylink`. It should contain `set wg_ifaces`, the `iifname @wg_ifaces ... jump keylink_proxy` rule, and the `keylink_proxy` chain.
 - Make sure packets really enter that interface (`iifname`) rather than another tunnel or the LAN.
+- Check the interface's firewall zone: `uci show firewall | grep -B3 -A3 wg0`. The zone must accept input (`input 'ACCEPT'`).
 - If **Source addresses inside the tunnel** is set, verify that the client IP belongs to that subnet.
 - Make sure `kmod-nft-tproxy` is installed and the TPROXY port is free: `netstat -lnup | grep <port>`.
 - Check `logread -e keylink`: the service logs skipped interfaces, nftables errors, and uplink warnings.
@@ -327,7 +328,7 @@ Values within arguments must not contain spaces: arguments are split on spaces w
 ## Limitations
 
 - The transparent proxy for LAN and WireGuard only supports IPv4. By default, DNS returns only IPv4 addresses to prevent traffic from bypassing the proxy over IPv6. IPv6 traffic from WG is not proxied.
-- UDP/QUIC may not be proxied, and DNS for WireGuard clients is configured manually. Do not select a WG interface that is used as an uplink: routing loops are possible.
+- DNS for WireGuard clients is configured manually. Do not select a WG interface that is used as an uplink: routing loops are possible.
 - Latency checks and subscription updates use applied settings. Save and apply a new server or subscription first.
 - Xray/sing-box JSON and Clash YAML subscriptions are not supported; only link lists, either plain text or base64-encoded, are supported.
 - Servers imported from subscriptions are overwritten on each update; manual changes to them are not preserved.

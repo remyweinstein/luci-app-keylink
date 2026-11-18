@@ -9,15 +9,16 @@ function ifaceName(s) {
 }
 
 function looksLikeUplink(s) {
-	if (s.defaultroute == '1')
+	/* AllowedIPs и route_allowed_ips задаются не в интерфейсе, а в секциях
+	 * его пиров (config wireguard_<интерфейс>) */
+	var fullRoute = uci.sections('network', 'wireguard_' + s['.name']).some(function(p) {
+		return p.disabled != '1' && p.route_allowed_ips == '1' &&
+			L.toArray(p.allowed_ips).some(function(a) {
+				return a == '0.0.0.0/0' || a == '::/0';
+			});
+	});
+	if (fullRoute)
 		return true;
-
-	if (s.route_allowed_ips == '1') {
-		var allowed = L.toArray(s.allowed_ips);
-		for (var i = 0; i < allowed.length; i++)
-			if (allowed[i] == '0.0.0.0/0' || allowed[i] == '::/0')
-				return true;
-	}
 
 	return uci.sections('network', 'route').some(function(r) {
 		if (r.interface != s['.name'])
@@ -109,7 +110,7 @@ return view.extend({
 		o.textvalue = function() {
 			var items = [
 				E('li', {}, _('IPv4 only. IPv6 traffic from WireGuard clients is not proxied by KeyLink.')),
-				E('li', {}, _('UDP and QUIC may not work through the proxy. Some sites and apps may fall back to TCP or fail.')),
+				E('li', {}, _('The WireGuard interface must be in a firewall zone that accepts input, for example lan. Otherwise the router rejects the intercepted traffic.')),
 				E('li', {}, _('The router needs a route back to WireGuard clients (normally created by WireGuard AllowedIPs). Otherwise replies cannot return to the tunnel.')),
 				E('li', {}, _('If the WireGuard interface is the router uplink or carries traffic to the proxy server, routing loops are possible. Enable logging and check the external IP after applying.')),
 				E('li', {}, _('Transparent proxying requires the kmod-nft-tproxy package and nftables (fw4).'))

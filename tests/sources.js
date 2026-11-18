@@ -15,8 +15,15 @@ const config = {
 	interface: [
 		{ '.name': 'lan', proto: 'static', addresses: [ '192.168.1.1/24' ] },
 		{ '.name': 'wg0', proto: 'wireguard', addresses: [ '10.0.0.1/24' ] },
-		{ '.name': 'wg1', proto: 'wireguard', addresses: [ '10.9.0.1/24' ],
-			route_allowed_ips: '1', allowed_ips: [ '0.0.0.0/0' ] }
+		{ '.name': 'wg1', proto: 'wireguard', addresses: [ '10.9.0.1/24' ] }
+	],
+	/* AllowedIPs live in peer sections; a disabled full-route peer is ignored */
+	wireguard_wg0: [
+		{ disabled: '1', route_allowed_ips: '1', allowed_ips: [ '0.0.0.0/0' ] },
+		{ route_allowed_ips: '1', allowed_ips: [ '10.0.0.2/32' ] }
+	],
+	wireguard_wg1: [
+		{ route_allowed_ips: '1', allowed_ips: [ '10.9.0.2/32', '0.0.0.0/0' ] }
 	],
 	route: []
 };
@@ -84,6 +91,7 @@ assert(!ifaces.includes('lan'));
 const labels = Object.fromEntries(options.wg_ifaces.values);
 assert.match(labels.wg0, /10\.0\.0\.1\/24/);
 assert.match(labels.wg1, /default route, possible loop/);
+assert.doesNotMatch(labels.wg0, /possible loop/, 'disabled and narrow peers are not an uplink');
 assert.match(labels.old0, /not found/);
 
 const dns = text(options._wg_dns.textvalue());
@@ -96,5 +104,7 @@ assert.match(limits, /IPv4 only/);
 assert.match(limits, /routing loops are possible/);
 assert.match(limits, /wg1/, 'selected uplink-like interface is called out');
 assert.match(limits, /route back to WireGuard clients/);
+assert.match(limits, /firewall zone that accepts input/);
+assert.doesNotMatch(limits, /QUIC/);
 
 console.log('OK: WireGuard sources UI filters interfaces and shows uplink/DNS warnings');
