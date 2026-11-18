@@ -8,6 +8,9 @@ DEPS="xray-core ucode ucode-mod-uci ucode-mod-fs kmod-nft-tproxy kmod-nft-socket
 GEO_DEPS="v2ray-geosite v2ray-geoip"
 MIN_XRAY_HY2="26.3.27"
 MIN_FREE_KB=40000
+# Основное место занимает Xray (~35 МБ). Если он уже стоит (обновление),
+# самому KeyLink с зависимостями хватает пары мегабайт.
+MIN_FREE_KB_UPDATE=3000
 GH="${GH_MIRROR:-https://github.com}"
 GH="${GH%/}"
 # При выпуске релиза GitHub Actions подставляет сюда имя репозитория
@@ -211,13 +214,14 @@ free_mb() {
 }
 
 check_space() {
-	local free
+	local free need=$MIN_FREE_KB
+	command -v xray >/dev/null 2>&1 && need=$MIN_FREE_KB_UPDATE
 	free=$(df -k /overlay 2>/dev/null | awk 'NR == 2 { print $4 }')
 	[ -n "$free" ] || free=$(df -k / 2>/dev/null | awk 'NR == 2 { print $4 }')
 	[ -n "$free" ] || return 0
-	if [ "$free" -lt "$MIN_FREE_KB" ]; then
-		warn "$(m "$((free / 1024)) MB free, at least $((MIN_FREE_KB / 1024)) MB is recommended" \
-			"свободно $((free / 1024)) МБ, рекомендуется не меньше $((MIN_FREE_KB / 1024)) МБ")"
+	if [ "$free" -lt "$need" ]; then
+		warn "$(m "$((free / 1024)) MB free, at least $((need / 1024)) MB is recommended" \
+			"свободно $((free / 1024)) МБ, рекомендуется не меньше $((need / 1024)) МБ")"
 		ask "$(m 'Continue anyway?' 'Продолжить всё равно?')" n || die "$(m 'not enough space' 'мало места')"
 	else
 		ok "$(m "$((free / 1024)) MB free" "свободно $((free / 1024)) МБ")"
