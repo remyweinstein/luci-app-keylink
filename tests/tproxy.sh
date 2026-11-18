@@ -176,4 +176,11 @@ run_case off 0 0 'wg0' '10.0.0.0/24'
 	esac
 )
 
+# Xray and ByeDPI hold two descriptors per proxied connection; the default
+# 1024 runs out under torrent load.
+[ "$(grep -c 'procd_set_param limits nofile="$NOFILE $NOFILE"' "$ROOT/root/etc/init.d/keylink")" -eq 2 ] || {
+	echo 'FAIL: Xray and ByeDPI must raise the open files limit' >&2
+	exit 1
+}
+
 echo 'OK: TPROXY rules keep LAN, add/remove WireGuard sources, and validate UCI values'
