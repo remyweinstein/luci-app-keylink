@@ -511,6 +511,14 @@ install_files() {
 		(cd "$SRC/htdocs" && find . -type f | sed 's#^\.#/www#')
 	} > "$DESTDIR$FILE_LIST"
 
+	# uhttpd отдаёт статику, только если она читается всеми (иначе 403);
+	# права из архива могут испортиться при распаковке со строгим umask
+	(cd "$SRC/htdocs" && find . -type f) | while read -r f; do
+		chmod a+r "$DESTDIR/www/$f"
+	done
+	find "$DESTDIR/www/luci-static/resources/keylink" \
+		"$DESTDIR/www/luci-static/resources/view/keylink" -type d -exec chmod a+rx {} + 2>/dev/null
+
 	chmod +x "$DESTDIR/etc/init.d/keylink" \
 		"$DESTDIR/usr/libexec/rpcd/keylink" \
 		"$DESTDIR"/usr/libexec/keylink/*.sh 2>/dev/null
